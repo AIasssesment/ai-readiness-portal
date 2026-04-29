@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { FileText, Calendar, TrendingUp, ArrowRight, Zap } from "lucide-react"
+import { UnlockReportButton } from "@/components/portal/unlock-report-button"
 
 function getReadinessColor(level: string) {
   switch (level) {
@@ -55,6 +56,7 @@ export default async function AssessmentsPage() {
     .select("*")
     .eq("client_id", client?.id)
     .order("created_at", { ascending: false })
+  const hasExtendedAccess = Boolean((client as { has_extended_access?: boolean } | null)?.has_extended_access)
 
   return (
     <div className="space-y-8">
@@ -111,12 +113,16 @@ export default async function AssessmentsPage() {
                       <div className="text-xs text-muted-foreground">Overall Score</div>
                     </div>
                     
-                    <Link href={`/portal/assessments/${assessment.id}`}>
-                      <Button variant="outline" className="gap-2">
-                        View Report
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
+                    {hasExtendedAccess ? (
+                      <Link href={`/portal/assessments/${assessment.id}`}>
+                        <Button variant="outline" className="gap-2">
+                          View Report
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    ) : (
+                      <UnlockReportButton label="Unlock Report" className="gap-2" />
+                    )}
                   </div>
                 </div>
 

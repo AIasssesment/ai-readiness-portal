@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RefreshCcw, LayoutDashboard, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,7 +14,7 @@ import Link from 'next/link'
 export function ResultsPage() {
   const { hasPurchasedExtended, reset } = useAssessmentStore()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function checkAuth() {
@@ -22,7 +22,7 @@ export function ResultsPage() {
       setIsLoggedIn(!!user)
     }
     checkAuth()
-  }, [supabase.auth])
+  }, [supabase])
 
   return (
     <div className="space-y-8">

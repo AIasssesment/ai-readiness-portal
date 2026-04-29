@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Bot, Zap, BarChart3, Clock, Shield, TrendingUp, LogIn, LayoutDashboard } from 'lucide-react'
 import { useAssessmentStore } from '@/lib/assessment-store'
@@ -38,7 +38,7 @@ export default function HomePage() {
   const step = useAssessmentStore((state) => state.step)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function checkAuth() {
@@ -47,7 +47,7 @@ export default function HomePage() {
       setIsCheckingAuth(false)
     }
     checkAuth()
-  }, [supabase.auth])
+  }, [supabase])
 
   return (
     <main className="min-h-screen bg-background">

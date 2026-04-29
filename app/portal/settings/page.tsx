@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     company_size: ""
   })
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function loadClient() {
@@ -64,7 +64,7 @@ export default function SettingsPage() {
 
       const { data } = await supabase
         .from("clients")
-        .select("*")
+        .select()
         .eq("user_id", user.id)
         .single()
 

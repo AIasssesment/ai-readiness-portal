@@ -13,6 +13,32 @@ import {
   AlertCircle,
   Zap
 } from "lucide-react"
+import { UnlockReportButton } from "@/components/portal/unlock-report-button"
+
+type Client = {
+  id: string
+  company_name: string
+  contact_name: string | null
+  has_extended_access?: boolean
+}
+
+type Assessment = {
+  id: string
+  overall_score: number
+  readiness_level: string
+  created_at: string
+  status: string
+}
+
+type Opportunity = {
+  id: string
+  title: string
+  department: string | null
+  complexity: string
+  priority: string
+  estimated_annual_savings: number | string
+  estimated_hours_saved_weekly: number
+}
 
 function getReadinessColor(level: string) {
   switch (level) {
@@ -44,33 +70,37 @@ export default async function PortalDashboard() {
   // Get client
   const { data: client } = await supabase
     .from("clients")
-    .select("*")
+    .select()
     .eq("user_id", user?.id)
     .single()
 
   // Get assessments
   const { data: assessments } = await supabase
     .from("assessments")
-    .select("*")
-    .eq("client_id", client?.id)
+    .select()
+    .eq("client_id", (client as any)?.id)
     .order("created_at", { ascending: false })
     .limit(5)
 
   // Get opportunities
   const { data: opportunities } = await supabase
     .from("opportunities")
-    .select("*")
-    .eq("client_id", client?.id)
+    .select()
+    .eq("client_id", (client as any)?.id)
     .order("priority", { ascending: true })
 
   // Get latest assessment
-  const latestAssessment = assessments?.[0]
+  const typedClient = client as unknown as Client | null
+  const typedAssessments = (assessments as unknown as Assessment[]) || []
+  const typedOpportunities = (opportunities as unknown as Opportunity[]) || []
+  const latestAssessment = typedAssessments[0]
+  const hasExtendedAccess = Boolean(typedClient?.has_extended_access)
 
   // Calculate stats
-  const totalOpportunities = opportunities?.length || 0
-  const highPriorityOpportunities = opportunities?.filter(o => o.priority === "high").length || 0
-  const totalEstimatedSavings = opportunities?.reduce((sum, o) => sum + (parseFloat(o.estimated_annual_savings) || 0), 0) || 0
-  const totalHoursSaved = opportunities?.reduce((sum, o) => sum + (o.estimated_hours_saved_weekly || 0), 0) || 0
+  const totalOpportunities = typedOpportunities.length
+  const highPriorityOpportunities = typedOpportunities.filter((o) => o.priority === "high").length
+  const totalEstimatedSavings = typedOpportunities.reduce((sum: number, o) => sum + (parseFloat(String(o.estimated_annual_savings)) || 0), 0)
+  const totalHoursSaved = typedOpportunities.reduce((sum: number, o) => sum + (o.estimated_hours_saved_weekly || 0), 0)
 
   return (
     <div className="space-y-8">
@@ -78,7 +108,7 @@ export default async function PortalDashboard() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {client?.contact_name || client?.company_name}
+            Welcome back, {typedClient?.contact_name || typedClient?.company_name}
           </h1>
           <p className="text-muted-foreground">
             {"Here's an overview of your AI readiness journey"}
@@ -197,12 +227,16 @@ export default async function PortalDashboard() {
                   <span className="text-muted-foreground">Completed</span>
                   <span>{new Date(latestAssessment.created_at).toLocaleDateString()}</span>
                 </div>
-                <Link href={`/portal/assessments/${latestAssessment.id}`}>
-                  <Button variant="outline" className="w-full mt-2 gap-2">
-                    View Full Report
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+                {hasExtendedAccess ? (
+                  <Link href={`/portal/assessments/${latestAssessment.id}`}>
+                    <Button variant="outline" className="w-full mt-2 gap-2">
+                      View Full Report
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <UnlockReportButton className="w-full mt-2 gap-2" />
+                )}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -233,9 +267,9 @@ export default async function PortalDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {opportunities && opportunities.length > 0 ? (
+            {typedOpportunities.length > 0 ? (
               <div className="space-y-4">
-                {opportunities.slice(0, 4).map((opportunity) => (
+                {typedOpportunities.slice(0, 4).map((opportunity) => (
                   <div 
                     key={opportunity.id} 
                     className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
@@ -253,7 +287,7 @@ export default async function PortalDashboard() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-medium text-emerald-600">
-                        ${parseFloat(opportunity.estimated_annual_savings || 0).toLocaleString()}
+                        ${parseFloat(String(opportunity.estimated_annual_savings || 0)).toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">/year</p>
                     </div>

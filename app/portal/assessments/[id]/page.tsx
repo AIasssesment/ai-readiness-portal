@@ -14,6 +14,29 @@ import {
   Lightbulb,
   Target
 } from "lucide-react"
+import { UnlockReportButton } from "@/components/portal/unlock-report-button"
+
+type Client = {
+  id: string
+  has_extended_access?: boolean
+}
+
+type Assessment = {
+  id: string
+  overall_score: number
+  readiness_level: string
+  dimension_scores: Record<string, number> | null
+  created_at: string
+}
+
+type Opportunity = {
+  id: string
+  title: string
+  description: string | null
+  priority: string
+  department: string | null
+  estimated_annual_savings: number | string
+}
 
 function getReadinessColor(level: string) {
   switch (level) {
@@ -71,30 +94,82 @@ export default async function AssessmentDetailPage({
   // Get client
   const { data: client } = await supabase
     .from("clients")
-    .select("*")
+    .select()
     .eq("user_id", user?.id)
     .single()
 
   // Get assessment
   const { data: assessment } = await supabase
     .from("assessments")
-    .select("*")
+    .select()
     .eq("id", id)
-    .eq("client_id", client?.id)
+    .eq("client_id", (client as any)?.id)
     .single()
-
-  if (!assessment) {
-    notFound()
-  }
 
   // Get related opportunities
   const { data: opportunities } = await supabase
     .from("opportunities")
-    .select("*")
+    .select()
     .eq("assessment_id", id)
     .order("priority", { ascending: true })
 
-  const dimensionScores = assessment.dimension_scores || {}
+  const typedClient = client as unknown as Client | null
+  const typedAssessment = assessment as unknown as Assessment | null
+  const typedOpportunities = (opportunities as unknown as Opportunity[]) || []
+
+  if (!typedAssessment) {
+    notFound()
+  }
+
+  const dimensionScores = typedAssessment.dimension_scores || {}
+  const hasExtendedAccess = Boolean(typedClient?.has_extended_access)
+
+  if (!hasExtendedAccess) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center gap-4">
+          <Link href="/portal/assessments">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Assessment Report</h1>
+            <p className="text-muted-foreground">
+              Your detailed report is part of the extended package.
+            </p>
+          </div>
+        </div>
+
+        <Card className="overflow-hidden">
+          <div className={`h-2 ${getReadinessColor(typedAssessment.readiness_level)}`} />
+          <CardContent className="p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Latest score</p>
+                <div className="mt-2 text-5xl font-bold">{typedAssessment.overall_score}%</div>
+                <Badge variant="outline" className="mt-3 capitalize">
+                  {getReadinessLabel(typedAssessment.readiness_level)}
+                </Badge>
+              </div>
+              <div className="max-w-md space-y-3">
+                <h3 className="text-xl font-semibold">Unlock the full extended report</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get full dimension breakdown, strengths, risks, and detailed opportunity analysis.
+                </p>
+                <div className="flex gap-3">
+                  <UnlockReportButton label="Unlock Extended Access" variant="default" />
+                  <Link href="/portal/assessments">
+                    <Button variant="outline">Back to assessments</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -109,7 +184,7 @@ export default async function AssessmentDetailPage({
             <h1 className="text-3xl font-bold tracking-tight">Assessment Report</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              {new Date(assessment.created_at).toLocaleDateString("en-US", {
+              {new Date(typedAssessment.created_at).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric"
@@ -125,23 +200,23 @@ export default async function AssessmentDetailPage({
 
       {/* Overall Score Card */}
       <Card className="overflow-hidden">
-        <div className={`h-2 ${getReadinessColor(assessment.readiness_level)}`} />
+        <div className={`h-2 ${getReadinessColor(typedAssessment.readiness_level)}`} />
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row md:items-center gap-8">
             <div className="flex items-center gap-6">
-              <div className={`h-24 w-24 rounded-2xl flex items-center justify-center ${getReadinessColor(assessment.readiness_level)}`}>
-                <span className="text-3xl font-bold text-white">{assessment.overall_score}%</span>
+              <div className={`h-24 w-24 rounded-2xl flex items-center justify-center ${getReadinessColor(typedAssessment.readiness_level)}`}>
+                <span className="text-3xl font-bold text-white">{typedAssessment.overall_score}%</span>
               </div>
               <div>
                 <Badge variant="outline" className="mb-2 text-base capitalize">
-                  {getReadinessLabel(assessment.readiness_level)}
+                  {getReadinessLabel(typedAssessment.readiness_level)}
                 </Badge>
                 <h2 className="text-2xl font-bold">AI Readiness Score</h2>
               </div>
             </div>
             <div className="flex-1 md:border-l md:pl-8">
               <p className="text-muted-foreground">
-                {getReadinessDescription(assessment.readiness_level)}
+                {getReadinessDescription(typedAssessment.readiness_level)}
               </p>
             </div>
           </div>
@@ -215,7 +290,7 @@ export default async function AssessmentDetailPage({
                       <span className="font-medium capitalize">
                         {dimensionLabels[key] || key.replace(/_/g, " ")}
                       </span>
-                      <span className="text-muted-foreground ml-2">({value}%)</span>
+                      <span className="text-muted-foreground ml-2">({String(value)}%)</span>
                     </div>
                   </li>
                 ))}
@@ -246,7 +321,7 @@ export default async function AssessmentDetailPage({
                       <span className="font-medium capitalize">
                         {dimensionLabels[key] || key.replace(/_/g, " ")}
                       </span>
-                      <span className="text-muted-foreground ml-2">({value}%)</span>
+                      <span className="text-muted-foreground ml-2">({String(value)}%)</span>
                     </div>
                   </li>
                 ))}
@@ -262,7 +337,7 @@ export default async function AssessmentDetailPage({
       </div>
 
       {/* Related Opportunities */}
-      {opportunities && opportunities.length > 0 && (
+      {typedOpportunities.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -280,7 +355,7 @@ export default async function AssessmentDetailPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {opportunities.map((opportunity) => (
+              {typedOpportunities.map((opportunity) => (
                 <div 
                   key={opportunity.id}
                   className="flex items-start gap-4 p-4 rounded-lg bg-muted/50"
@@ -307,7 +382,7 @@ export default async function AssessmentDetailPage({
                   </div>
                   <div className="text-right shrink-0">
                     <div className="font-semibold text-emerald-600">
-                      ${parseFloat(opportunity.estimated_annual_savings || 0).toLocaleString()}
+                      ${parseFloat(String(opportunity.estimated_annual_savings || 0)).toLocaleString()}
                     </div>
                     <div className="text-xs text-muted-foreground">Est. Annual Savings</div>
                   </div>

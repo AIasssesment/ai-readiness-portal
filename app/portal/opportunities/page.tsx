@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { OpportunitiesStatsChart } from "@/components/portal/opportunities-stats-chart"
 import { 
   Lightbulb, 
   TrendingUp, 
@@ -9,9 +10,28 @@ import {
   Building2,
   Gauge,
   DollarSign,
-  Filter
 } from "lucide-react"
 import Link from "next/link"
+
+type ClientRow = {
+  id: string
+  user_id: string
+}
+
+type OpportunityRow = {
+  id: string
+  created_at: string | null
+  title: string
+  description: string | null
+  priority: string
+  complexity: string
+  department: string | null
+  status: string
+  implementation_timeline: string | null
+  estimated_annual_savings: string | number | null
+  estimated_hours_saved_weekly: number | string | null
+  notes: string | null
+}
 
 function getPriorityColor(priority: string) {
   switch (priority) {
@@ -49,28 +69,49 @@ export default async function OpportunitiesPage() {
   // Get client
   const { data: client } = await supabase
     .from("clients")
-    .select("*")
+    .select()
     .eq("user_id", user?.id)
     .single()
+  const typedClient = (client ?? null) as unknown as ClientRow | null
 
   // Get all opportunities
-  const { data: opportunities } = await supabase
+  const { data: rawOpportunities } = await supabase
     .from("opportunities")
-    .select("*")
-    .eq("client_id", client?.id)
+    .select()
+    .eq("client_id", typedClient?.id)
     .order("priority", { ascending: true })
     .order("estimated_annual_savings", { ascending: false })
+  const opportunities = (rawOpportunities ?? []) as OpportunityRow[]
 
   // Calculate totals
-  const totalSavings = opportunities?.reduce((sum, o) => sum + (parseFloat(o.estimated_annual_savings) || 0), 0) || 0
-  const totalHours = opportunities?.reduce((sum, o) => sum + (o.estimated_hours_saved_weekly || 0), 0) || 0
-  const highPriority = opportunities?.filter(o => o.priority === "high").length || 0
+  const totalSavings =
+    opportunities.reduce(
+      (sum: number, o: OpportunityRow) => sum + (parseFloat(String(o.estimated_annual_savings ?? 0)) || 0),
+      0,
+    ) || 0
+  const totalHours =
+    opportunities.reduce(
+      (sum: number, o: OpportunityRow) => sum + (parseFloat(String(o.estimated_hours_saved_weekly ?? 0)) || 0),
+      0,
+    ) || 0
+  const formattedTotalHours = Number(totalHours.toFixed(1)).toLocaleString()
+  const formattedYearlyHours = Math.round(totalHours * 52).toLocaleString()
+  const highPriority = opportunities.filter((o: OpportunityRow) => o.priority === "high").length || 0
+  const averageSavings = opportunities?.length ? Math.round(totalSavings / opportunities.length) : 0
+
+  const opportunitiesForTimeline = opportunities.map((opportunity: OpportunityRow) => ({
+    createdAt: opportunity.created_at,
+    annualSavings: parseFloat(String(opportunity.estimated_annual_savings ?? 0)) || 0,
+    weeklyHours: parseFloat(String(opportunity.estimated_hours_saved_weekly ?? 0)) || 0,
+  }))
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Opportunities</h1>
+          <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+            AI Opportunities
+          </h1>
           <p className="text-muted-foreground">
             Identified opportunities for AI implementation in your organization
           </p>
@@ -79,12 +120,12 @@ export default async function OpportunitiesPage() {
 
       {/* Stats Overview */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Opportunities
             </CardTitle>
-            <Lightbulb className="h-4 w-4 text-muted-foreground" />
+            <Lightbulb className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{opportunities?.length || 0}</div>
@@ -94,12 +135,12 @@ export default async function OpportunitiesPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Est. Annual Savings
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">
@@ -111,42 +152,49 @@ export default async function OpportunitiesPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Hours Saved/Week
             </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalHours}</div>
+            <div className="text-xl sm:text-2xl font-bold tabular-nums break-words leading-tight">
+              {formattedTotalHours}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {Math.round(totalHours * 52)} hours/year
+              {formattedYearlyHours} hours/year
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg. ROI Timeline
+              Avg. Opportunity Value
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-violet-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3-6 mo</div>
+            <div className="text-2xl font-bold">${averageSavings.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Typical payback period
+              average savings per initiative
             </p>
           </CardContent>
         </Card>
       </div>
 
+      <OpportunitiesStatsChart data={opportunitiesForTimeline} />
+
       {/* Opportunities List */}
-      {opportunities && opportunities.length > 0 ? (
+      {opportunities.length > 0 ? (
         <div className="space-y-4">
           {opportunities.map((opportunity) => (
-            <Card key={opportunity.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={opportunity.id}
+              className="group border-border/60 bg-card/75 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            >
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                   <div className="flex-1 space-y-3">
@@ -156,9 +204,11 @@ export default async function OpportunitiesPage() {
                         opportunity.priority === "medium" ? "bg-amber-500" : "bg-emerald-500"
                       }`} />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{opportunity.title}</h3>
+                        <h3 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+                          {opportunity.title}
+                        </h3>
                         {opportunity.description && (
-                          <p className="text-muted-foreground mt-1">{opportunity.description}</p>
+                          <p className="mt-1 text-muted-foreground">{opportunity.description}</p>
                         )}
                       </div>
                     </div>
@@ -190,16 +240,16 @@ export default async function OpportunitiesPage() {
                     )}
                   </div>
 
-                  <div className="lg:text-right space-y-2 lg:min-w-48">
-                    <div>
+                  <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3 lg:min-w-48 lg:text-right">
+                    <div className="space-y-0.5">
                       <div className="text-2xl font-bold text-emerald-600">
-                        ${parseFloat(opportunity.estimated_annual_savings || 0).toLocaleString()}
+                        ${parseFloat(String(opportunity.estimated_annual_savings ?? 0)).toLocaleString()}
                       </div>
                       <div className="text-xs text-muted-foreground">Est. Annual Savings</div>
                     </div>
-                    <div>
+                    <div className="space-y-0.5">
                       <div className="text-lg font-semibold">
-                        {opportunity.estimated_hours_saved_weekly || 0} hrs/week
+                        {(parseFloat(String(opportunity.estimated_hours_saved_weekly ?? 0)) || 0).toLocaleString()} hrs/week
                       </div>
                       <div className="text-xs text-muted-foreground">Time Savings</div>
                     </div>
@@ -207,7 +257,7 @@ export default async function OpportunitiesPage() {
                 </div>
 
                 {opportunity.notes && (
-                  <div className="mt-4 pt-4 border-t">
+                  <div className="mt-4 rounded-lg border border-border/60 bg-muted/20 p-3">
                     <p className="text-sm text-muted-foreground">
                       <strong>Notes:</strong> {opportunity.notes}
                     </p>
