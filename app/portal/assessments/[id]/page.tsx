@@ -1,0 +1,322 @@
+import { createClient } from "@/lib/supabase/server"
+import { notFound } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
+import { 
+  ArrowLeft, 
+  Download, 
+  Calendar, 
+  TrendingUp,
+  CheckCircle2,
+  AlertTriangle,
+  Lightbulb,
+  Target
+} from "lucide-react"
+
+function getReadinessColor(level: string) {
+  switch (level) {
+    case "leader": return "bg-emerald-500"
+    case "advanced": return "bg-blue-500"
+    case "developing": return "bg-amber-500"
+    case "emerging": return "bg-orange-500"
+    default: return "bg-slate-500"
+  }
+}
+
+function getReadinessLabel(level: string) {
+  switch (level) {
+    case "leader": return "AI Leader"
+    case "advanced": return "Advanced"
+    case "developing": return "Developing"
+    case "emerging": return "Emerging"
+    default: return level
+  }
+}
+
+function getReadinessDescription(level: string) {
+  switch (level) {
+    case "leader":
+      return "Your organization demonstrates exceptional AI readiness with mature processes, skilled teams, and strategic AI integration across operations."
+    case "advanced":
+      return "Your organization has strong AI capabilities and is well-positioned to expand AI initiatives. Focus on optimization and scaling existing implementations."
+    case "developing":
+      return "Your organization is building AI capabilities. Continue investing in infrastructure, skills, and pilot projects to advance your AI maturity."
+    case "emerging":
+      return "Your organization is beginning its AI journey. Focus on building foundational capabilities, data infrastructure, and developing AI literacy."
+    default:
+      return "Assessment complete. Review your dimension scores for detailed insights."
+  }
+}
+
+const dimensionLabels: Record<string, string> = {
+  data_infrastructure: "Data Infrastructure",
+  technical_readiness: "Technical Readiness",
+  organizational_culture: "Organizational Culture",
+  strategic_alignment: "Strategic Alignment",
+  skills_talent: "Skills & Talent",
+  governance_ethics: "Governance & Ethics"
+}
+
+export default async function AssessmentDetailPage({
+  params
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Get client
+  const { data: client } = await supabase
+    .from("clients")
+    .select("*")
+    .eq("user_id", user?.id)
+    .single()
+
+  // Get assessment
+  const { data: assessment } = await supabase
+    .from("assessments")
+    .select("*")
+    .eq("id", id)
+    .eq("client_id", client?.id)
+    .single()
+
+  if (!assessment) {
+    notFound()
+  }
+
+  // Get related opportunities
+  const { data: opportunities } = await supabase
+    .from("opportunities")
+    .select("*")
+    .eq("assessment_id", id)
+    .order("priority", { ascending: true })
+
+  const dimensionScores = assessment.dimension_scores || {}
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/portal/assessments">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Assessment Report</h1>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {new Date(assessment.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+              })}
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" className="gap-2">
+          <Download className="h-4 w-4" />
+          Download PDF
+        </Button>
+      </div>
+
+      {/* Overall Score Card */}
+      <Card className="overflow-hidden">
+        <div className={`h-2 ${getReadinessColor(assessment.readiness_level)}`} />
+        <CardContent className="p-8">
+          <div className="flex flex-col md:flex-row md:items-center gap-8">
+            <div className="flex items-center gap-6">
+              <div className={`h-24 w-24 rounded-2xl flex items-center justify-center ${getReadinessColor(assessment.readiness_level)}`}>
+                <span className="text-3xl font-bold text-white">{assessment.overall_score}%</span>
+              </div>
+              <div>
+                <Badge variant="outline" className="mb-2 text-base capitalize">
+                  {getReadinessLabel(assessment.readiness_level)}
+                </Badge>
+                <h2 className="text-2xl font-bold">AI Readiness Score</h2>
+              </div>
+            </div>
+            <div className="flex-1 md:border-l md:pl-8">
+              <p className="text-muted-foreground">
+                {getReadinessDescription(assessment.readiness_level)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dimension Scores */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Dimension Breakdown
+          </CardTitle>
+          <CardDescription>
+            Detailed scores across key AI readiness dimensions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            {Object.entries(dimensionScores).map(([key, value]) => {
+              const score = value as number
+              const label = dimensionLabels[key] || key.replace(/_/g, " ")
+              
+              return (
+                <div key={key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium capitalize">{label}</span>
+                    <span className="text-lg font-bold">{score}%</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-muted overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        score >= 80 ? "bg-emerald-500" :
+                        score >= 60 ? "bg-blue-500" :
+                        score >= 40 ? "bg-amber-500" : "bg-orange-500"
+                      }`}
+                      style={{ width: `${score}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {score >= 80 ? "Excellent - industry-leading capabilities" :
+                     score >= 60 ? "Good - strong foundation with room to grow" :
+                     score >= 40 ? "Developing - building capabilities" : "Emerging - early stage, focus here"}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Key Insights */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="h-5 w-5" />
+              Strengths
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {Object.entries(dimensionScores)
+                .filter(([_, value]) => (value as number) >= 60)
+                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                .slice(0, 3)
+                .map(([key, value]) => (
+                  <li key={key} className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-medium capitalize">
+                        {dimensionLabels[key] || key.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-muted-foreground ml-2">({value}%)</span>
+                    </div>
+                  </li>
+                ))}
+              {Object.entries(dimensionScores).filter(([_, value]) => (value as number) >= 60).length === 0 && (
+                <li className="text-muted-foreground">Focus on building foundational capabilities first</li>
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              Areas for Improvement
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {Object.entries(dimensionScores)
+                .filter(([_, value]) => (value as number) < 60)
+                .sort((a, b) => (a[1] as number) - (b[1] as number))
+                .slice(0, 3)
+                .map(([key, value]) => (
+                  <li key={key} className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-medium capitalize">
+                        {dimensionLabels[key] || key.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-muted-foreground ml-2">({value}%)</span>
+                    </div>
+                  </li>
+                ))}
+              {Object.entries(dimensionScores).filter(([_, value]) => (value as number) < 60).length === 0 && (
+                <li className="text-emerald-600 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  All dimensions performing well!
+                </li>
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Related Opportunities */}
+      {opportunities && opportunities.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5" />
+                Identified Opportunities
+              </CardTitle>
+              <Link href="/portal/opportunities">
+                <Button variant="ghost" size="sm">View All</Button>
+              </Link>
+            </div>
+            <CardDescription>
+              AI opportunities identified from this assessment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {opportunities.map((opportunity) => (
+                <div 
+                  key={opportunity.id}
+                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/50"
+                >
+                  <div className={`mt-1 h-3 w-3 rounded-full shrink-0 ${
+                    opportunity.priority === "high" ? "bg-red-500" :
+                    opportunity.priority === "medium" ? "bg-amber-500" : "bg-emerald-500"
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium">{opportunity.title}</h4>
+                    {opportunity.description && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {opportunity.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <Badge variant="outline" className="capitalize">
+                        {opportunity.priority} priority
+                      </Badge>
+                      {opportunity.department && (
+                        <span className="text-muted-foreground">{opportunity.department}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-semibold text-emerald-600">
+                      ${parseFloat(opportunity.estimated_annual_savings || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Est. Annual Savings</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
