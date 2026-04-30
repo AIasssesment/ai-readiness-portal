@@ -41,14 +41,16 @@ export default async function PortalLayout({
           select id, title
           from conversations
           where client_id = ${typedClient.id}
-          order by updated_at desc
+          order by (title like '★ %') desc, updated_at desc
           limit 20
         `
       : []
 
   const recentChatsForNav = recentChats.map((chat) => ({
     id: chat.id,
-    title: chat.title,
+    title: chat.title.replace(/^★\s+/, ""),
+    rawTitle: chat.title,
+    isStarred: chat.title.startsWith("★ "),
     href: `/portal/chat?conversationId=${chat.id}`,
   }))
 

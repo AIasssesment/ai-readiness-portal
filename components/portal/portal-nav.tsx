@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,6 +18,11 @@ import {
   Lightbulb, 
   ShieldAlert,
   MessagesSquare,
+  Plus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Star,
   Settings, 
   LogOut,
   User,
@@ -42,6 +47,8 @@ interface PortalNavProps {
   recentChats: Array<{
     id: string
     title: string
+    rawTitle: string
+    isStarred: boolean
     href: string
   }>
 }
@@ -51,17 +58,67 @@ const navItems = [
   { href: "/portal/assessments", label: "Assessments", icon: FileText },
   { href: "/portal/opportunities", label: "Opportunities", icon: Lightbulb },
   { href: "/portal/job-risk", label: "Job Risk", icon: ShieldAlert },
-  { href: "/portal/chat", label: "AI Advisor", icon: MessagesSquare },
+  { href: "/portal/chat", label: "Chat", icon: MessagesSquare },
 ]
 
 export function PortalNav({ user, client, recentChats }: PortalNavProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = createClient()
+  const activeConversationId = searchParams.get("conversationId")
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/")
+    router.refresh()
+  }
+
+  const handleCreateChat = async () => {
+    const response = await fetch("/api/chat/conversations", { method: "POST" })
+    if (!response.ok) return
+    const payload = (await response.json()) as { id?: string }
+    if (!payload.id) return
+    router.push(`/portal/chat?conversationId=${payload.id}`)
+    router.refresh()
+  }
+
+  const handleRenameChat = async (chatId: string, currentTitle: string) => {
+    const nextTitle = window.prompt("Rename chat", currentTitle.replace(/^★\s+/, ""))
+    if (!nextTitle) return
+    const response = await fetch(`/api/chat/conversations/${chatId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: nextTitle }),
+    })
+    if (!response.ok) return
+    router.refresh()
+  }
+
+  const handleDeleteChat = async (chatId: string) => {
+    const shouldDelete = window.confirm("Delete this chat?")
+    if (!shouldDelete) return
+
+    const response = await fetch(`/api/chat/conversations/${chatId}`, {
+      method: "DELETE",
+    })
+    if (!response.ok) return
+
+    if (activeConversationId === chatId) {
+      router.push("/portal/chat")
+    }
+    router.refresh()
+  }
+
+  const handleToggleStar = async (chatId: string, rawTitle: string, isStarred: boolean) => {
+    const cleaned = rawTitle.replace(/^★\s+/, "")
+    const nextTitle = isStarred ? cleaned : `★ ${cleaned}`
+    const response = await fetch(`/api/chat/conversations/${chatId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: nextTitle }),
+    })
+    if (!response.ok) return
     router.refresh()
   }
 
@@ -82,6 +139,16 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
             Take Assessment
           </Button>
         </Link>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-3 mb-3 justify-start"
+          onClick={handleCreateChat}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create chat
+        </Button>
 
         <nav className="space-y-1">
           {navItems.map((item) => {
@@ -107,6 +174,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
           })}
         </nav>
 
+
         <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-md border bg-muted/20">
           <div className="border-b px-3 py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recently</p>
@@ -115,14 +183,53 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
             {recentChats.length > 0 ? (
               <div className="space-y-1">
                 {recentChats.map((chat) => (
-                  <Link
+                  <div
                     key={chat.id}
-                    href={chat.href}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className={cn(
+                      "group flex items-center gap-1 rounded-md px-1 py-0.5",
+                      activeConversationId === chat.id && "bg-muted",
+                    )}
                   >
-                    <MessagesSquare className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{chat.title}</span>
-                  </Link>
+                    <Link
+                      href={chat.href}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <MessagesSquare className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{chat.title}</span>
+                      {chat.isStarred ? (
+                        <Star className="h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />
+                      ) : null}
+                    </Link>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36">
+                        <DropdownMenuItem onClick={() => handleRenameChat(chat.id, chat.rawTitle)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleStar(chat.id, chat.rawTitle, chat.isStarred)}>
+                          <Star className="mr-2 h-4 w-4" />
+                          {chat.isStarred ? "Unstar" : "Star"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteChat(chat.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 ))}
               </div>
             ) : (
