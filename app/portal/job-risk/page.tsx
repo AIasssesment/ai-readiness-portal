@@ -8,6 +8,8 @@ import { Progress } from "@/components/ui/progress"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { JobRiskGenerateButton } from "@/components/portal/job-risk-generate-button"
 import { ShieldCheck, Building2, Clock, ArrowRight } from "lucide-react"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
 type RiskRole = {
   id: string
@@ -47,8 +49,8 @@ function parseJsonTextArray(input: unknown): string[] {
 
 function formatTimeline(min: number | null, max: number | null) {
   if (!min && !max) return "N/A"
-  if (min && max) return `${min}-${max} months`
-  return `${min ?? max} months`
+  if (min && max) return `${min}-${max}`
+  return `${min ?? max}`
 }
 
 function riskPercent(score: number) {
@@ -60,6 +62,7 @@ export default async function JobRiskPage({
 }: {
   searchParams?: Promise<{ department?: string }>
 }) {
+  const locale = await getServerLocale()
   const user = await getSessionUser()
   if (!user) redirect("/auth/login")
   const params = await searchParams
@@ -76,8 +79,8 @@ export default async function JobRiskPage({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>No client profile found</CardTitle>
-          <CardDescription>Complete assessment onboarding first.</CardDescription>
+          <CardTitle>{t(locale, "jobRisk.noClient")}</CardTitle>
+          <CardDescription>{t(locale, "jobRisk.completeOnboarding")}</CardDescription>
         </CardHeader>
       </Card>
     )
@@ -104,14 +107,14 @@ export default async function JobRiskPage({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Job Risk Report</CardTitle>
+          <CardTitle>{t(locale, "jobRisk.reportTitle")}</CardTitle>
           <CardDescription>
-            Add workforce role counts first, then generate role-by-role disruption risk.
+            {t(locale, "jobRisk.reportHint")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg border border-border/50 bg-muted/30 p-3">
-            <p className="text-sm font-medium">Workforce roles</p>
+            <p className="text-sm font-medium">{t(locale, "jobRisk.workforceRoles")}</p>
             {workforceRows.length > 0 ? (
               <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                 {workforceRows.slice(0, 6).map((row) => (
@@ -122,7 +125,7 @@ export default async function JobRiskPage({
               </ul>
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
-                No workforce roles found. Add roles via API <code>/api/workforce/roles</code> before generating.
+                {t(locale, "jobRisk.noWorkforceRolesPrefix")} <code>/api/workforce/roles</code> {t(locale, "jobRisk.noWorkforceRolesSuffix")}
               </p>
             )}
           </div>
@@ -168,22 +171,22 @@ export default async function JobRiskPage({
       <Card className="border-border/40 bg-card/80 shadow-sm">
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle>Overall disruption risk</CardTitle>
+            <CardTitle>{t(locale, "jobRisk.overallDisruptionRisk")}</CardTitle>
             <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/15 text-emerald-200">
               {Number(latestReport.overall_risk_score).toFixed(1)} / 5
             </Badge>
           </div>
           <Progress value={riskPercent(Number(latestReport.overall_risk_score))} className="h-2 bg-muted/60" />
           <CardDescription>
-            {latestReport.executive_summary || "No summary available"}
+            {latestReport.executive_summary || t(locale, "jobRisk.noSummary")}
           </CardDescription>
           <div className="grid gap-2 pt-1 sm:grid-cols-2">
             <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total employees</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.totalEmployees")}</p>
               <p className="text-lg font-semibold">{totalEmployees.toLocaleString()}</p>
             </div>
             <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Estimated at-risk employees</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.atRiskEmployees")}</p>
               <p className="text-lg font-semibold text-emerald-500">{Math.round(totalAtRisk).toLocaleString()}</p>
             </div>
           </div>
@@ -191,7 +194,7 @@ export default async function JobRiskPage({
       </Card>
 
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">Filter by department:</p>
+        <p className="text-sm text-muted-foreground">{t(locale, "jobRisk.filterByDepartment")}</p>
         <Link href="/portal/job-risk">
           <Badge
             variant="outline"
@@ -199,7 +202,7 @@ export default async function JobRiskPage({
               ? "border-primary/40 bg-primary/15 text-primary"
               : "border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50"}
           >
-            All
+            {t(locale, "jobRisk.all")}
           </Badge>
         </Link>
         {departments.map((department) => (
@@ -233,11 +236,11 @@ export default async function JobRiskPage({
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5" />
-                        {role.department || "Unassigned"}
+                        {role.department || t(locale, "jobRisk.unassigned")}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
-                        {formatTimeline(role.timeline_months_min, role.timeline_months_max)}
+                        {formatTimeline(role.timeline_months_min, role.timeline_months_max)} {t(locale, "jobRisk.months")}
                       </span>
                     </div>
                   </div>
@@ -246,9 +249,9 @@ export default async function JobRiskPage({
                     <p className="text-3xl font-semibold leading-none text-emerald-500">
                       {Number(role.risk_score).toFixed(1)}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Risk</p>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.risk")}</p>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {Math.round(Number(role.at_risk_headcount || 0)).toLocaleString()} / {(role.employee_count || 0).toLocaleString()} people
+                      {Math.round(Number(role.at_risk_headcount || 0)).toLocaleString()} / {(role.employee_count || 0).toLocaleString()} {t(locale, "jobRisk.people")}
                     </p>
                   </div>
                 </div>
@@ -260,13 +263,13 @@ export default async function JobRiskPage({
             <AccordionContent className="px-5 pb-5">
               <div className="space-y-5 border-t border-border/30 pt-5">
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Why this risk score</p>
-                  <p className="text-sm text-foreground/90">{role.reasoning || "No reasoning available"}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.whyThisRisk")}</p>
+                  <p className="text-sm text-foreground/90">{role.reasoning || t(locale, "jobRisk.noReasoning")}</p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2 rounded-lg border border-red-500/15 bg-red-500/5 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-red-300">Tasks at risk</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-red-300">{t(locale, "jobRisk.tasksAtRisk")}</p>
                     <ul className="space-y-1.5 text-sm">
                       {parseJsonTextArray(role.tasks_at_risk).slice(0, 4).map((item) => (
                         <li key={item} className="flex items-start gap-2">
@@ -278,7 +281,7 @@ export default async function JobRiskPage({
                   </div>
 
                   <div className="space-y-2 rounded-lg border border-emerald-500/15 bg-emerald-500/5 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Durably human</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">{t(locale, "jobRisk.durablyHuman")}</p>
                     <ul className="space-y-1.5 text-sm">
                       {parseJsonTextArray(role.tasks_safe).slice(0, 4).map((item) => (
                         <li key={item} className="flex items-start gap-2">
@@ -291,7 +294,7 @@ export default async function JobRiskPage({
                 </div>
 
                 <div className="space-y-2 rounded-lg border border-border/35 bg-muted/20 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Reskilling roadmap</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.reskillingRoadmap")}</p>
                   <ul className="space-y-1.5 text-sm">
                     {parseJsonTextArray(role.reskilling_suggestions).slice(0, 4).map((item) => (
                       <li key={item} className="flex items-start gap-2">
@@ -309,7 +312,7 @@ export default async function JobRiskPage({
       {filteredRoles.length === 0 && (
         <Card className="border-border/40 bg-card/80">
           <CardContent className="py-6 text-sm text-muted-foreground">
-            No roles found for the selected department.
+            {t(locale, "jobRisk.noRolesForDepartment")}
           </CardContent>
         </Card>
       )}

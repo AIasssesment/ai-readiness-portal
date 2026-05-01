@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { FileText, Calendar, TrendingUp, ArrowRight, Zap } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
 function getReadinessColor(level: string) {
   switch (level) {
@@ -16,45 +18,46 @@ function getReadinessColor(level: string) {
   }
 }
 
-function getReadinessLabel(level: string) {
+function getReadinessLabel(level: string, locale: "en" | "uk") {
   switch (level) {
-    case "leader": return "AI Leader"
-    case "advanced": return "Advanced"
-    case "developing": return "Developing"
-    case "emerging": return "Emerging"
+    case "leader": return t(locale, "assessments.readiness.leader")
+    case "advanced": return t(locale, "assessments.readiness.advanced")
+    case "developing": return t(locale, "assessments.readiness.developing")
+    case "emerging": return t(locale, "assessments.readiness.emerging")
     default: return level
   }
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, locale: "en" | "uk") {
   switch (status) {
     case "completed":
-      return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Completed</Badge>
+      return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">{t(locale, "status.completed")}</Badge>
     case "in_progress":
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-700">In Progress</Badge>
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-700">{t(locale, "status.inProgress")}</Badge>
     case "reviewed":
-      return <Badge variant="secondary" className="bg-purple-100 text-purple-700">Reviewed</Badge>
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-700">{t(locale, "status.reviewed")}</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
 }
 
 export default async function AssessmentsPage() {
+  const locale = await getServerLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   // Get client
   const { data: client } = await supabase
     .from("clients")
-    .select("*")
+    .select()
     .eq("user_id", user?.id)
     .single()
 
   // Get all assessments
   const { data: assessments } = await supabase
     .from("assessments")
-    .select("*")
-    .eq("client_id", client?.id)
+    .select()
+    .eq("client_id", (client as { id?: string } | null)?.id)
     .order("created_at", { ascending: false })
   const hasExtendedAccess = Boolean((client as { has_extended_access?: boolean } | null)?.has_extended_access)
 
@@ -62,22 +65,22 @@ export default async function AssessmentsPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Assessments</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t(locale, "assessments.title")}</h1>
           <p className="text-muted-foreground">
-            View and track your AI readiness assessments over time
+            {t(locale, "assessments.subtitle")}
           </p>
         </div>
         <Link href="/">
           <Button className="gap-2">
             <Zap className="h-4 w-4" />
-            New Assessment
+            {t(locale, "assessments.newAssessment")}
           </Button>
         </Link>
       </div>
 
       {assessments && assessments.length > 0 ? (
         <div className="grid gap-4">
-          {assessments.map((assessment) => (
+          {(assessments as Array<Record<string, any>>).map((assessment) => (
             <Card key={assessment.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -87,13 +90,13 @@ export default async function AssessmentsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold">AI Readiness Assessment</h3>
-                        {getStatusBadge(assessment.status)}
+                        <h3 className="font-semibold">{t(locale, "assessments.cardTitle")}</h3>
+                        {getStatusBadge(assessment.status, locale)}
                       </div>
                       <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          {new Date(assessment.created_at).toLocaleDateString("en-US", {
+                          {new Date(assessment.created_at).toLocaleDateString(locale === "uk" ? "uk-UA" : "en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric"
@@ -101,7 +104,7 @@ export default async function AssessmentsPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <TrendingUp className="h-3.5 w-3.5" />
-                          {getReadinessLabel(assessment.readiness_level)}
+                          {getReadinessLabel(assessment.readiness_level, locale)}
                         </span>
                       </div>
                     </div>
@@ -110,18 +113,18 @@ export default async function AssessmentsPage() {
                   <div className="flex items-center gap-6">
                     <div className="text-center">
                       <div className="text-3xl font-bold">{assessment.overall_score}%</div>
-                      <div className="text-xs text-muted-foreground">Overall Score</div>
+                          <div className="text-xs text-muted-foreground">{t(locale, "assessments.overallScore")}</div>
                     </div>
                     
                     {hasExtendedAccess ? (
                       <Link href={`/portal/assessments/${assessment.id}`}>
                         <Button variant="outline" className="gap-2">
-                          View Report
+                          {t(locale, "assessments.viewReport")}
                           <ArrowRight className="h-4 w-4" />
                         </Button>
                       </Link>
                     ) : (
-                      <UnlockReportButton label="Unlock Report" className="gap-2" />
+                      <UnlockReportButton label={t(locale, "assessments.unlockReport")} className="gap-2" />
                     )}
                   </div>
                 </div>
@@ -149,15 +152,14 @@ export default async function AssessmentsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Assessments Yet</h3>
+            <h3 className="text-xl font-semibold mb-2">{t(locale, "assessments.emptyTitle")}</h3>
             <p className="text-muted-foreground text-center mb-6 max-w-md">
-              Take your first AI readiness assessment to understand your organization&apos;s 
-              current capabilities and identify opportunities for AI implementation.
+              {t(locale, "assessments.emptyDescription")}
             </p>
             <Link href="/">
               <Button size="lg" className="gap-2">
                 <Zap className="h-5 w-5" />
-                Start Your First Assessment
+                {t(locale, "assessments.startFirst")}
               </Button>
             </Link>
           </CardContent>

@@ -1,12 +1,16 @@
 import { WorkforceManager } from "@/components/portal/workforce-manager"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
-export default function WorkforcePage() {
+export default async function WorkforcePage() {
+  const locale = await getServerLocale()
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Workforce Data</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t(locale, "workforce.title")}</h1>
         <p className="text-muted-foreground">
-          Add role titles and employee counts to power data-driven AI job risk analysis.
+          {t(locale, "workforce.subtitle")}
         </p>
       </div>
 

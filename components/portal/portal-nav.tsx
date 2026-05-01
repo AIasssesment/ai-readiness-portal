@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/components/language-provider"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -64,15 +65,6 @@ interface PortalNavProps {
   }>
 }
 
-const navItems = [
-  { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/portal/assessments", label: "Assessments", icon: FileText },
-  { href: "/portal/opportunities", label: "Opportunities", icon: Lightbulb },
-  { href: "/portal/workforce", label: "Workforce", icon: Users },
-  { href: "/portal/job-risk", label: "Job Risk", icon: ShieldAlert },
-  { href: "/portal/chat", label: "Chat", icon: MessagesSquare },
-]
-
 export function PortalNav({ user, client, recentChats }: PortalNavProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -83,6 +75,15 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
   const [renameChatId, setRenameChatId] = useState<string | null>(null)
   const [renameTitle, setRenameTitle] = useState("")
   const [isRenaming, setIsRenaming] = useState(false)
+  const { t } = useLanguage()
+  const navItems = [
+    { href: "/portal", label: t("portal.nav.dashboard"), icon: LayoutDashboard },
+    { href: "/portal/assessments", label: t("portal.nav.assessments"), icon: FileText },
+    { href: "/portal/opportunities", label: t("portal.nav.opportunities"), icon: Lightbulb },
+    { href: "/portal/workforce", label: t("portal.nav.workforce"), icon: Users },
+    { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
+    { href: "/portal/chat", label: t("portal.nav.chat"), icon: MessagesSquare },
+  ]
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -126,7 +127,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
   }
 
   const handleDeleteChat = async (chatId: string) => {
-    const shouldDelete = window.confirm("Delete this chat?")
+    const shouldDelete = window.confirm(t("portal.chat.deleteConfirm"))
     if (!shouldDelete) return
 
     const response = await fetch(`/api/chat/conversations/${chatId}`, {
@@ -159,14 +160,14 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Brain className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold">AI Readiness Portal</span>
+          <span className="font-semibold">{t("portal.title")}</span>
         </Link>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col p-3">
         <Link href="/" className="mb-3 block">
           <Button variant="outline" size="sm" className="w-full justify-start">
-            Take Assessment
+            {t("portal.takeAssessment")}
           </Button>
         </Link>
 
@@ -177,7 +178,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
           onClick={handleCreateChat}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Create chat
+          {t("portal.createChat")}
         </Button>
 
         <nav className="space-y-1">
@@ -207,7 +208,9 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-md border bg-muted/20">
           <div className="border-b px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recently</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("portal.recently")}
+            </p>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
             {recentChats.length > 0 ? (
@@ -244,18 +247,18 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
                       <DropdownMenuContent align="end" className="w-36">
                         <DropdownMenuItem onClick={() => openRenameDialog(chat.id, chat.rawTitle)}>
                           <Pencil className="mr-2 h-4 w-4" />
-                          Rename
+                          {t("portal.chat.rename")}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleStar(chat.id, chat.rawTitle, chat.isStarred)}>
                           <Star className="mr-2 h-4 w-4" />
-                          {chat.isStarred ? "Unstar" : "Star"}
+                          {chat.isStarred ? t("portal.chat.unstar") : t("portal.chat.star")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDeleteChat(chat.id)}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t("portal.chat.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -264,7 +267,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
               </div>
             ) : (
               <p className="px-2 py-2 text-xs text-muted-foreground">
-                No recent chats yet.
+                {t("portal.chat.noRecent")}
               </p>
             )}
           </div>
@@ -292,13 +295,13 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
             <DropdownMenuItem asChild>
               <Link href="/portal/settings" className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                {t("portal.settings")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+              {t("portal.signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -307,16 +310,16 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename chat</DialogTitle>
+            <DialogTitle>{t("portal.chat.renameTitle")}</DialogTitle>
             <DialogDescription>
-              Update the conversation title shown in your recent chats.
+              {t("portal.chat.renameDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <Input
             value={renameTitle}
             onChange={(event) => setRenameTitle(event.target.value)}
-            placeholder="Enter chat title"
+            placeholder={t("portal.chat.renamePlaceholder")}
             maxLength={120}
           />
 
@@ -329,10 +332,10 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
                 setRenameTitle("")
               }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleRenameChat} disabled={isRenaming || !renameTitle.trim()}>
-              {isRenaming ? "Saving..." : "Save"}
+              {isRenaming ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
+import { useLanguage } from "@/components/language-provider"
+import { tr } from "@/lib/i18n"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -17,6 +19,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const { locale } = useLanguage()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,9 +50,9 @@ export default function LoginPage() {
               <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl">{tr(locale, "Welcome Back", "З поверненням")}</CardTitle>
           <CardDescription>
-            Sign in to access your AI Readiness Portal
+            {tr(locale, "Sign in to access your AI Readiness Portal", "Увійдіть, щоб отримати доступ до AI Readiness Portal")}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -60,7 +63,7 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{tr(locale, "Email", "Email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -71,11 +74,11 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{tr(locale, "Password", "Пароль")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={tr(locale, "Enter your password", "Введіть ваш пароль")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -87,21 +90,21 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  {tr(locale, "Signing in...", "Вхід...")}
                 </>
               ) : (
-                "Sign In"
+                tr(locale, "Sign In", "Увійти")
               )}
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              Don&apos;t have an account?{" "}
+              {tr(locale, "Don't have an account?", "Немає акаунта?")}{" "}
               <Link href="/auth/sign-up" className="text-primary hover:underline">
-                Sign up
+                {tr(locale, "Sign up", "Зареєструватися")}
               </Link>
             </p>
             <p className="text-sm text-muted-foreground text-center">
               <Link href="/" className="text-primary hover:underline">
-                Take the free assessment
+                {tr(locale, "Take the free assessment", "Пройти безкоштовне оцінювання")}
               </Link>
             </p>
           </CardFooter>

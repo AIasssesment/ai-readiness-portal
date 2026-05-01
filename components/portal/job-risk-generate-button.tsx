@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, ShieldAlert } from "lucide-react"
+import { useLanguage } from "@/components/language-provider"
 
 export function JobRiskGenerateButton() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { t } = useLanguage()
 
   const handleGenerate = async () => {
     setIsLoading(true)
@@ -18,7 +20,7 @@ export function JobRiskGenerateButton() {
     setIsLoading(false)
 
     if (!response.ok) {
-      setError("Could not generate the report right now. Please try again.")
+      setError(t("jobRisk.generate.error"))
       return
     }
     router.refresh()
@@ -29,16 +31,16 @@ export function JobRiskGenerateButton() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-xl">
           <ShieldAlert className="h-5 w-5 text-primary" />
-          Job Risk AI Advisor
+          {t("jobRisk.generate.title")}
         </CardTitle>
         <CardDescription>
-          Generate a role-by-role disruption report with risk scores, timelines, and practical reskilling steps.
+          {t("jobRisk.generate.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <Button onClick={handleGenerate} disabled={isLoading} className="h-11 w-full gap-2">
           <Sparkles className="h-4 w-4" />
-          {isLoading ? "Generating Report..." : "Generate Job Risk Report"}
+          {isLoading ? t("jobRisk.generate.loading") : t("jobRisk.generate.action")}
         </Button>
         {error && <p className="text-sm text-destructive">{error}</p>}
       </CardContent>

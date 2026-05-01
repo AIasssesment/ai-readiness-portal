@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { PortalNav } from "@/components/portal/portal-nav"
 import { sql } from "@/lib/db"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
 type Client = {
   id: string
@@ -20,6 +22,7 @@ export default async function PortalLayout({
 }: {
   children: React.ReactNode
 }) {
+  const locale = await getServerLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -62,7 +65,9 @@ export default async function PortalLayout({
 
       <div className="min-w-0 flex-1 md:h-screen md:overflow-y-auto">
         <div className="border-b bg-background px-4 py-3 md:hidden">
-          <p className="text-sm font-medium">Portal Navigation is available on desktop view.</p>
+          <p className="text-sm font-medium">
+            {t(locale, "portal.layout.mobileNavNotice")}
+          </p>
         </div>
         <main className="px-4 py-8 md:px-8">
           {children}

@@ -10,28 +10,36 @@ import { CompanyInfoForm } from '@/components/assessment/company-info-form'
 import { QuestionCard } from '@/components/assessment/question-card'
 import { AnalyzingScreen } from '@/components/assessment/analyzing-screen'
 import { ResultsPage } from '@/components/assessment/results-page'
+import { useLanguage } from "@/components/language-provider"
+import { tr } from "@/lib/i18n"
 
 const BENEFITS = [
   {
     icon: Zap,
-    title: 'Instant Analysis',
-    description: 'AI-powered assessment in under 5 minutes',
+    titleEn: 'Instant Analysis',
+    titleUk: 'Миттєвий аналіз',
+    descriptionEn: 'AI-powered assessment in under 5 minutes',
+    descriptionUk: 'Оцінювання на базі AI менш ніж за 5 хвилин',
   },
   {
     icon: BarChart3,
-    title: 'Data-Driven Insights',
-    description: 'Personalized recommendations based on your responses',
+    titleEn: 'Data-Driven Insights',
+    titleUk: 'Інсайти на основі даних',
+    descriptionEn: 'Personalized recommendations based on your responses',
+    descriptionUk: 'Персоналізовані рекомендації на основі ваших відповідей',
   },
   {
     icon: Clock,
-    title: 'Save Time & Money',
-    description: 'Identify high-impact automation opportunities',
+    titleEn: 'Save Time & Money',
+    titleUk: 'Економія часу та коштів',
+    descriptionEn: 'Identify high-impact automation opportunities',
+    descriptionUk: 'Визначайте можливості автоматизації з найбільшим ефектом',
   },
 ]
 
 const TRUST_SIGNALS = [
-  { icon: Shield, text: 'Secure & Private' },
-  { icon: TrendingUp, text: '500+ Companies Assessed' },
+  { icon: Shield, textEn: 'Secure & Private', textUk: 'Безпечно та приватно' },
+  { icon: TrendingUp, textEn: '500+ Companies Assessed', textUk: '500+ компаній пройшли оцінювання' },
 ]
 
 export default function HomePage() {
@@ -39,6 +47,7 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const supabase = useMemo(() => createClient(), [])
+  const { locale } = useLanguage()
 
   useEffect(() => {
     async function checkAuth() {
@@ -66,7 +75,7 @@ export default function HomePage() {
                 <Link href="/portal">
                   <Button variant="outline" size="sm" className="gap-2">
                     <LayoutDashboard className="h-4 w-4" />
-                    My Portal
+                    {tr(locale, "My Portal", "Мій портал")}
                   </Button>
                 </Link>
               ) : (
@@ -74,11 +83,11 @@ export default function HomePage() {
                   <Link href="/auth/login">
                     <Button variant="ghost" size="sm" className="gap-2">
                       <LogIn className="h-4 w-4" />
-                      Sign In
+                      {tr(locale, "Sign In", "Увійти")}
                     </Button>
                   </Link>
                   <Link href="/auth/sign-up">
-                    <Button size="sm">Get Started</Button>
+                    <Button size="sm">{tr(locale, "Get Started", "Почати")}</Button>
                   </Link>
                 </>
               )}
@@ -94,11 +103,10 @@ export default function HomePage() {
             {/* Hero Section */}
             <div className="text-center mb-10">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-balance">
-                Discover Your Automation Potential
+                {tr(locale, "Discover Your Automation Potential", "Відкрийте потенціал автоматизації")}
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-                Get a free AI-powered analysis of your business operations and uncover opportunities 
-                to save time, reduce costs, and scale efficiently.
+                {tr(locale, "Get a free AI-powered analysis of your business operations and uncover opportunities to save time, reduce costs, and scale efficiently.", "Отримайте безкоштовний AI-аналіз ваших бізнес-процесів та знайдіть можливості, щоб заощаджувати час, зменшувати витрати і масштабуватися ефективніше.")}
               </p>
             </div>
 
@@ -108,15 +116,15 @@ export default function HomePage() {
                 const Icon = benefit.icon
                 return (
                   <div
-                    key={benefit.title}
+                    key={benefit.titleEn}
                     className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border"
                   >
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Icon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">{benefit.title}</h3>
-                      <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                      <h3 className="font-semibold text-foreground">{tr(locale, benefit.titleEn, benefit.titleUk)}</h3>
+                      <p className="text-sm text-muted-foreground">{tr(locale, benefit.descriptionEn, benefit.descriptionUk)}</p>
                     </div>
                   </div>
                 )
@@ -131,9 +139,9 @@ export default function HomePage() {
               {TRUST_SIGNALS.map((signal) => {
                 const Icon = signal.icon
                 return (
-                  <div key={signal.text} className="flex items-center gap-2 text-muted-foreground">
+                  <div key={signal.textEn} className="flex items-center gap-2 text-muted-foreground">
                     <Icon className="h-4 w-4" />
-                    <span className="text-sm">{signal.text}</span>
+                    <span className="text-sm">{tr(locale, signal.textEn, signal.textUk)}</span>
                   </div>
                 )
               })}
@@ -171,12 +179,12 @@ export default function HomePage() {
               <span className="text-sm font-medium text-foreground">AutomateIQ</span>
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              Helping businesses unlock their automation potential since 2024
+              {tr(locale, "Helping businesses unlock their automation potential since 2024", "Допомагаємо бізнесам розкривати потенціал автоматизації з 2024 року")}
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-              <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+              <a href="#" className="hover:text-foreground transition-colors">{tr(locale, "Privacy", "Приватність")}</a>
+              <a href="#" className="hover:text-foreground transition-colors">{tr(locale, "Terms", "Умови")}</a>
+              <a href="#" className="hover:text-foreground transition-colors">{tr(locale, "Contact", "Контакти")}</a>
             </div>
           </div>
         </div>

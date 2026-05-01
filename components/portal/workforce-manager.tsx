@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useLanguage } from "@/components/language-provider"
 
 type WorkforceRole = {
   id: string
@@ -18,6 +19,7 @@ export function WorkforceManager() {
   const [department, setDepartment] = useState("")
   const [employeeCount, setEmployeeCount] = useState("")
   const [loading, setLoading] = useState(false)
+  const { t } = useLanguage()
 
   const loadRoles = async () => {
     const response = await fetch("/api/workforce/roles")
@@ -65,53 +67,53 @@ export function WorkforceManager() {
   return (
     <Card className="border-border/50">
       <CardHeader>
-        <CardTitle>Workforce Input</CardTitle>
+        <CardTitle>{t("workforce.inputTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleAdd} className="grid gap-3 md:grid-cols-4">
           <Input
             value={roleTitle}
             onChange={(event) => setRoleTitle(event.target.value)}
-            placeholder="Job title (e.g. Customer Support Rep)"
+            placeholder={t("workforce.jobTitlePlaceholder")}
             className="md:col-span-2"
           />
           <Input
             value={department}
             onChange={(event) => setDepartment(event.target.value)}
-            placeholder="Department"
+            placeholder={t("workforce.departmentPlaceholder")}
           />
           <Input
             value={employeeCount}
             onChange={(event) => setEmployeeCount(event.target.value)}
             type="number"
             min={0}
-            placeholder="Employees"
+            placeholder={t("workforce.employeesPlaceholder")}
           />
           <Button type="submit" disabled={loading} className="md:col-span-4 md:justify-self-end">
-            {loading ? "Saving..." : "Add / Update Role"}
+            {loading ? t("common.saving") : t("workforce.addOrUpdateRole")}
           </Button>
         </form>
 
         <div className="rounded-lg border border-border/40">
           <div className="flex items-center justify-between border-b border-border/40 px-3 py-2 text-sm">
-            <span className="font-medium">Current workforce roles</span>
-            <span className="text-muted-foreground">{totalEmployees.toLocaleString()} total employees</span>
+            <span className="font-medium">{t("workforce.currentRoles")}</span>
+            <span className="text-muted-foreground">{totalEmployees.toLocaleString()} {t("workforce.totalEmployees")}</span>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {roles.length === 0 ? (
-              <p className="px-3 py-4 text-sm text-muted-foreground">No roles added yet.</p>
+              <p className="px-3 py-4 text-sm text-muted-foreground">{t("workforce.noRolesAdded")}</p>
             ) : (
               <ul className="divide-y divide-border/30">
                 {roles.map((role) => (
                   <li key={role.id} className="flex items-center justify-between px-3 py-2 text-sm">
                     <div>
                       <p className="font-medium">{role.role_title}</p>
-                      <p className="text-xs text-muted-foreground">{role.department || "Unassigned department"}</p>
+                      <p className="text-xs text-muted-foreground">{role.department || t("workforce.unassignedDepartment")}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-medium">{role.employee_count.toLocaleString()}</span>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(role.id)}>
-                        Delete
+                        {t("portal.chat.delete")}
                       </Button>
                     </div>
                   </li>

@@ -14,6 +14,8 @@ import {
   Zap
 } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
 type Client = {
   id: string
@@ -37,7 +39,7 @@ type Opportunity = {
   complexity: string
   priority: string
   estimated_annual_savings: number | string
-  estimated_hours_saved_weekly: number
+  estimated_hours_saved_weekly: number | string | null
 }
 
 function getReadinessColor(level: string) {
@@ -50,20 +52,21 @@ function getReadinessColor(level: string) {
   }
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, locale: "en" | "uk") {
   switch (status) {
     case "completed":
-      return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Completed</Badge>
+      return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">{t(locale, "status.completed")}</Badge>
     case "in_progress":
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-700">In Progress</Badge>
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-700">{t(locale, "status.inProgress")}</Badge>
     case "reviewed":
-      return <Badge variant="secondary" className="bg-purple-100 text-purple-700">Reviewed</Badge>
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-700">{t(locale, "status.reviewed")}</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
 }
 
 export default async function PortalDashboard() {
+  const locale = await getServerLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -100,7 +103,11 @@ export default async function PortalDashboard() {
   const totalOpportunities = typedOpportunities.length
   const highPriorityOpportunities = typedOpportunities.filter((o) => o.priority === "high").length
   const totalEstimatedSavings = typedOpportunities.reduce((sum: number, o) => sum + (parseFloat(String(o.estimated_annual_savings)) || 0), 0)
-  const totalHoursSaved = typedOpportunities.reduce((sum: number, o) => sum + (o.estimated_hours_saved_weekly || 0), 0)
+  const totalHoursSaved = typedOpportunities.reduce(
+    (sum: number, o) => sum + (parseFloat(String(o.estimated_hours_saved_weekly ?? 0)) || 0),
+    0,
+  )
+  const formattedTotalHoursSaved = Number(totalHoursSaved.toFixed(1)).toLocaleString()
 
   return (
     <div className="space-y-8">
@@ -108,16 +115,16 @@ export default async function PortalDashboard() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {typedClient?.contact_name || typedClient?.company_name}
+            {t(locale, "dashboard.welcomeBack")} {typedClient?.contact_name || typedClient?.company_name}
           </h1>
           <p className="text-muted-foreground">
-            {"Here's an overview of your AI readiness journey"}
+            {t(locale, "dashboard.overviewSubtitle")}
           </p>
         </div>
         <Link href="/">
           <Button className="gap-2">
             <Zap className="h-4 w-4" />
-            New Assessment
+            {t(locale, "dashboard.newAssessment")}
           </Button>
         </Link>
       </div>
@@ -127,14 +134,16 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Assessments
+              {t(locale, "dashboard.assessments")}
             </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{assessments?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {latestAssessment ? `Latest: ${new Date(latestAssessment.created_at).toLocaleDateString()}` : "No assessments yet"}
+              {latestAssessment
+                ? `${t(locale, "dashboard.latestPrefix")} ${new Date(latestAssessment.created_at).toLocaleDateString()}`
+                : t(locale, "dashboard.noAssessmentsYet")}
             </p>
           </CardContent>
         </Card>
@@ -142,14 +151,14 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Opportunities
+              {t(locale, "dashboard.opportunities")}
             </CardTitle>
             <Lightbulb className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalOpportunities}</div>
             <p className="text-xs text-muted-foreground">
-              {highPriorityOpportunities} high priority
+              {highPriorityOpportunities} {t(locale, "dashboard.highPriority")}
             </p>
           </CardContent>
         </Card>
@@ -157,7 +166,7 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Est. Annual Savings
+              {t(locale, "dashboard.estAnnualSavings")}
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -166,7 +175,7 @@ export default async function PortalDashboard() {
               ${totalEstimatedSavings.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              Across all opportunities
+              {t(locale, "dashboard.acrossAllOpportunities")}
             </p>
           </CardContent>
         </Card>
@@ -174,14 +183,16 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Hours Saved/Week
+              {t(locale, "dashboard.hoursSavedWeek")}
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalHoursSaved}</div>
+            <div className="text-2xl font-bold tabular-nums break-all leading-tight">
+              {formattedTotalHoursSaved}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Potential time savings
+              {t(locale, "dashboard.potentialTimeSavings")}
             </p>
           </CardContent>
         </Card>
@@ -193,11 +204,11 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Latest Assessment</CardTitle>
-              {latestAssessment && getStatusBadge(latestAssessment.status)}
+              <CardTitle>{t(locale, "dashboard.latestAssessment")}</CardTitle>
+              {latestAssessment && getStatusBadge(latestAssessment.status, locale)}
             </div>
             <CardDescription>
-              Your most recent AI readiness evaluation
+              {t(locale, "dashboard.latestAssessmentDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -206,7 +217,7 @@ export default async function PortalDashboard() {
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Overall Score</span>
+                      <span className="text-sm font-medium">{t(locale, "dashboard.overallScore")}</span>
                       <span className="text-2xl font-bold">{latestAssessment.overall_score}%</span>
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -218,19 +229,19 @@ export default async function PortalDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Readiness Level</span>
+                  <span className="text-muted-foreground">{t(locale, "dashboard.readinessLevel")}</span>
                   <Badge variant="outline" className="capitalize">
                     {latestAssessment.readiness_level}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Completed</span>
+                  <span className="text-muted-foreground">{t(locale, "status.completed")}</span>
                   <span>{new Date(latestAssessment.created_at).toLocaleDateString()}</span>
                 </div>
                 {hasExtendedAccess ? (
                   <Link href={`/portal/assessments/${latestAssessment.id}`}>
                     <Button variant="outline" className="w-full mt-2 gap-2">
-                      View Full Report
+                      {t(locale, "dashboard.viewFullReport")}
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -241,9 +252,9 @@ export default async function PortalDashboard() {
             ) : (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No assessments yet</p>
+                <p className="text-muted-foreground mb-4">{t(locale, "dashboard.noAssessmentsYet")}</p>
                 <Link href="/">
-                  <Button>Take Your First Assessment</Button>
+                  <Button>{t(locale, "dashboard.takeFirstAssessment")}</Button>
                 </Link>
               </div>
             )}
@@ -254,16 +265,16 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Top Opportunities</CardTitle>
+              <CardTitle>{t(locale, "dashboard.topOpportunities")}</CardTitle>
               <Link href="/portal/opportunities">
                 <Button variant="ghost" size="sm" className="gap-1">
-                  View All
+                  {t(locale, "dashboard.viewAll")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
             <CardDescription>
-              High-impact AI opportunities identified for your organization
+              {t(locale, "dashboard.topOpportunitiesDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -282,14 +293,14 @@ export default async function PortalDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{opportunity.title}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {opportunity.department} • {opportunity.complexity} complexity
+                        {opportunity.department} • {opportunity.complexity} {t(locale, "dashboard.complexity")}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-medium text-emerald-600">
                         ${parseFloat(String(opportunity.estimated_annual_savings || 0)).toLocaleString()}
                       </p>
-                      <p className="text-xs text-muted-foreground">/year</p>
+                      <p className="text-xs text-muted-foreground">{t(locale, "dashboard.perYear")}</p>
                     </div>
                   </div>
                 ))}
@@ -297,9 +308,9 @@ export default async function PortalDashboard() {
             ) : (
               <div className="text-center py-8">
                 <Lightbulb className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No opportunities identified yet</p>
+                <p className="text-muted-foreground mb-4">{t(locale, "dashboard.noOpportunitiesYet")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Complete an assessment to discover AI opportunities
+                  {t(locale, "dashboard.completeAssessmentForOpps")}
                 </p>
               </div>
             )}
@@ -310,8 +321,8 @@ export default async function PortalDashboard() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks and next steps</CardDescription>
+          <CardTitle>{t(locale, "dashboard.quickActions")}</CardTitle>
+          <CardDescription>{t(locale, "dashboard.quickActionsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -321,8 +332,8 @@ export default async function PortalDashboard() {
                   <Zap className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">New Assessment</p>
-                  <p className="text-xs text-muted-foreground">Start fresh evaluation</p>
+                  <p className="font-medium text-sm">{t(locale, "dashboard.newAssessment")}</p>
+                  <p className="text-xs text-muted-foreground">{t(locale, "dashboard.startFreshEvaluation")}</p>
                 </div>
               </div>
             </Link>
@@ -332,8 +343,8 @@ export default async function PortalDashboard() {
                   <FileText className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">View Reports</p>
-                  <p className="text-xs text-muted-foreground">Access all assessments</p>
+                  <p className="font-medium text-sm">{t(locale, "dashboard.viewReports")}</p>
+                  <p className="text-xs text-muted-foreground">{t(locale, "dashboard.accessAllAssessments")}</p>
                 </div>
               </div>
             </Link>
@@ -343,8 +354,8 @@ export default async function PortalDashboard() {
                   <Lightbulb className="h-5 w-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Explore Opportunities</p>
-                  <p className="text-xs text-muted-foreground">Review AI use cases</p>
+                  <p className="font-medium text-sm">{t(locale, "dashboard.exploreOpportunities")}</p>
+                  <p className="text-xs text-muted-foreground">{t(locale, "dashboard.reviewAiUseCases")}</p>
                 </div>
               </div>
             </Link>
@@ -354,8 +365,8 @@ export default async function PortalDashboard() {
                   <CheckCircle2 className="h-5 w-5 text-slate-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Update Profile</p>
-                  <p className="text-xs text-muted-foreground">Manage company info</p>
+                  <p className="font-medium text-sm">{t(locale, "dashboard.updateProfile")}</p>
+                  <p className="text-xs text-muted-foreground">{t(locale, "dashboard.manageCompanyInfo")}</p>
                 </div>
               </div>
             </Link>

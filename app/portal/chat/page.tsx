@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useLanguage } from "@/components/language-provider"
 
 export default function ChatPage() {
   const searchParams = useSearchParams()
@@ -15,6 +16,7 @@ export default function ChatPage() {
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const [historyKey, setHistoryKey] = useState(0)
+  const { locale, t } = useLanguage()
 
   useEffect(() => {
     let cancelled = false
@@ -50,7 +52,7 @@ export default function ChatPage() {
   if (isLoadingHistory) {
     return (
       <div className="grid h-full min-h-[70vh] place-items-center">
-        <p className="text-sm text-muted-foreground">Loading chat...</p>
+        <p className="text-sm text-muted-foreground">{t("chat.loading")}</p>
       </div>
     )
   }
@@ -60,6 +62,8 @@ export default function ChatPage() {
       key={`${conversationId ?? "new"}-${historyKey}`}
       conversationId={conversationId}
       initialMessages={initialMessages}
+      locale={locale}
+      t={t}
     />
   )
 }
@@ -67,9 +71,13 @@ export default function ChatPage() {
 function ChatSession({
   conversationId,
   initialMessages,
+  locale,
+  t,
 }: {
   conversationId: string | null
   initialMessages: UIMessage[]
+  locale: "en" | "uk"
+  t: (key: import("@/lib/i18n").TranslationKey) => string
 }) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const refreshedForMessageCount = useRef(0)
@@ -107,12 +115,12 @@ function ChatSession({
     <div className="-mb-8 flex h-[calc(100dvh-6rem)] min-h-[84vh] flex-col md:h-[calc(100dvh-5rem)]">
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-border/60 bg-card/80">
         <CardHeader className="border-b border-border/60 pb-4">
-          <CardTitle className="text-xl">AI Advisor</CardTitle>
+          <CardTitle className="text-xl">{t("chat.title")}</CardTitle>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (
             <p className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
-              Ask about your score, opportunities, or job-risk report.
+              {t("chat.emptyHint")}
             </p>
           )}
 
@@ -146,13 +154,13 @@ function ChatSession({
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask AI Advisor..."
+              placeholder={t("chat.inputPlaceholder")}
               rows={2}
               className="resize-none rounded-2xl border-border/70 bg-background/70"
             />
             <div className="flex justify-end">
               <Button type="submit" disabled={status === "streaming" || !input.trim()}>
-                {status === "streaming" ? "Thinking..." : "Send"}
+                {status === "streaming" ? t("chat.thinking") : t("chat.send")}
               </Button>
             </div>
           </form>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { DM_Sans, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { LanguageProvider } from '@/components/language-provider'
+import { getServerLocale } from '@/lib/i18n-server'
 import './globals.css'
 
 const dmSans = DM_Sans({ 
@@ -37,15 +39,19 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getServerLocale()
+
   return (
-    <html lang="en" className="dark">
+    <html lang={locale} className="dark">
       <body className={`${dmSans.variable} ${syne.variable} font-sans antialiased`}>
-        {children}
+        <LanguageProvider initialLocale={locale}>
+          {children}
+        </LanguageProvider>
         <Analytics />
       </body>
     </html>

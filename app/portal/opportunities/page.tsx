@@ -12,6 +12,8 @@ import {
   DollarSign,
 } from "lucide-react"
 import Link from "next/link"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
 type ClientRow = {
   id: string
@@ -63,6 +65,7 @@ function getStatusColor(status: string) {
 }
 
 export default async function OpportunitiesPage() {
+  const locale = await getServerLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -110,10 +113,10 @@ export default async function OpportunitiesPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
-            AI Opportunities
+            {t(locale, "opps.title")}
           </h1>
           <p className="text-muted-foreground">
-            Identified opportunities for AI implementation in your organization
+            {t(locale, "opps.subtitle")}
           </p>
         </div>
       </div>
@@ -123,14 +126,14 @@ export default async function OpportunitiesPage() {
         <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Opportunities
+              {t(locale, "opps.totalOpportunities")}
             </CardTitle>
             <Lightbulb className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{opportunities?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {highPriority} high priority
+              {highPriority} {t(locale, "dashboard.highPriority")}
             </p>
           </CardContent>
         </Card>
@@ -138,7 +141,7 @@ export default async function OpportunitiesPage() {
         <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Est. Annual Savings
+              {t(locale, "opps.estAnnualSavings")}
             </CardTitle>
             <DollarSign className="h-4 w-4 text-emerald-500" />
           </CardHeader>
@@ -147,7 +150,7 @@ export default async function OpportunitiesPage() {
               ${totalSavings.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              Combined potential
+              {t(locale, "opps.combinedPotential")}
             </p>
           </CardContent>
         </Card>
@@ -155,7 +158,7 @@ export default async function OpportunitiesPage() {
         <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Hours Saved/Week
+              {t(locale, "dashboard.hoursSavedWeek")}
             </CardTitle>
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
@@ -164,7 +167,7 @@ export default async function OpportunitiesPage() {
               {formattedTotalHours}
             </div>
             <p className="text-xs text-muted-foreground">
-              {formattedYearlyHours} hours/year
+              {formattedYearlyHours} {t(locale, "opps.hoursPerYear")}
             </p>
           </CardContent>
         </Card>
@@ -172,14 +175,14 @@ export default async function OpportunitiesPage() {
         <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg. Opportunity Value
+              {t(locale, "opps.avgOpportunityValue")}
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-violet-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${averageSavings.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              average savings per initiative
+              {t(locale, "opps.avgSavingsPerInitiative")}
             </p>
           </CardContent>
         </Card>
@@ -215,11 +218,11 @@ export default async function OpportunitiesPage() {
 
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className={`font-medium ${getPriorityColor(opportunity.priority)}`}>
-                        {opportunity.priority} priority
+                        {opportunity.priority} {t(locale, "opps.priority")}
                       </Badge>
                       <Badge variant="outline" className={`font-medium ${getComplexityColor(opportunity.complexity)}`}>
                         <Gauge className="h-3 w-3 mr-1" />
-                        {opportunity.complexity} complexity
+                        {opportunity.complexity} {t(locale, "opps.complexity")}
                       </Badge>
                       {opportunity.department && (
                         <Badge variant="outline" className="border-slate-400/30 bg-slate-700/30 text-slate-200">
@@ -235,7 +238,7 @@ export default async function OpportunitiesPage() {
                     {opportunity.implementation_timeline && (
                       <p className="text-sm text-slate-300/80">
                         <Clock className="mr-1 inline h-3.5 w-3.5" />
-                        Timeline: {opportunity.implementation_timeline}
+                        {t(locale, "opps.timelinePrefix")} {opportunity.implementation_timeline}
                       </p>
                     )}
                   </div>
@@ -245,13 +248,13 @@ export default async function OpportunitiesPage() {
                       <div className="text-5xl font-bold tracking-tight text-emerald-400">
                         ${parseFloat(String(opportunity.estimated_annual_savings ?? 0)).toLocaleString()}
                       </div>
-                      <div className="text-xl text-slate-300/80">Est. Annual Savings</div>
+                      <div className="text-xl text-slate-300/80">{t(locale, "opps.estAnnualSavings")}</div>
                     </div>
                     <div className="space-y-0.5">
                       <div className="text-5xl font-bold tracking-tight text-slate-100">
-                        {(parseFloat(String(opportunity.estimated_hours_saved_weekly ?? 0)) || 0).toLocaleString()} hrs/week
+                        {(parseFloat(String(opportunity.estimated_hours_saved_weekly ?? 0)) || 0).toLocaleString()} {t(locale, "opps.hrsWeek")}
                       </div>
-                      <div className="text-xl text-slate-300/80">Time Savings</div>
+                      <div className="text-xl text-slate-300/80">{t(locale, "opps.timeSavings")}</div>
                     </div>
                   </div>
                 </div>
@@ -259,7 +262,7 @@ export default async function OpportunitiesPage() {
                 {opportunity.notes && (
                   <div className="mt-4 rounded-lg border border-slate-600/50 bg-slate-800/40 p-3">
                     <p className="text-sm text-slate-300/90">
-                      <strong>Notes:</strong> {opportunity.notes}
+                      <strong>{t(locale, "opps.notes")}</strong> {opportunity.notes}
                     </p>
                   </div>
                 )}
@@ -271,13 +274,12 @@ export default async function OpportunitiesPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Lightbulb className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Opportunities Yet</h3>
+            <h3 className="text-xl font-semibold mb-2">{t(locale, "opps.emptyTitle")}</h3>
             <p className="text-muted-foreground text-center mb-6 max-w-md">
-              Complete an AI readiness assessment to identify potential opportunities 
-              for AI implementation in your organization.
+              {t(locale, "opps.emptyDescription")}
             </p>
             <Link href="/">
-              <Button size="lg">Take Assessment</Button>
+              <Button size="lg">{t(locale, "opps.takeAssessment")}</Button>
             </Link>
           </CardContent>
         </Card>

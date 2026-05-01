@@ -15,6 +15,8 @@ import {
   Target
 } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
+import { t } from "@/lib/i18n"
+import { getServerLocale } from "@/lib/i18n-server"
 
 type Client = {
   id: string
@@ -48,28 +50,28 @@ function getReadinessColor(level: string) {
   }
 }
 
-function getReadinessLabel(level: string) {
+function getReadinessLabel(level: string, locale: "en" | "uk") {
   switch (level) {
-    case "leader": return "AI Leader"
-    case "advanced": return "Advanced"
-    case "developing": return "Developing"
-    case "emerging": return "Emerging"
+    case "leader": return t(locale, "assessments.readiness.leader")
+    case "advanced": return t(locale, "assessments.readiness.advanced")
+    case "developing": return t(locale, "assessments.readiness.developing")
+    case "emerging": return t(locale, "assessments.readiness.emerging")
     default: return level
   }
 }
 
-function getReadinessDescription(level: string) {
+function getReadinessDescription(level: string, locale: "en" | "uk") {
   switch (level) {
     case "leader":
-      return "Your organization demonstrates exceptional AI readiness with mature processes, skilled teams, and strategic AI integration across operations."
+      return t(locale, "assessmentDetail.readinessDescription.leader")
     case "advanced":
-      return "Your organization has strong AI capabilities and is well-positioned to expand AI initiatives. Focus on optimization and scaling existing implementations."
+      return t(locale, "assessmentDetail.readinessDescription.advanced")
     case "developing":
-      return "Your organization is building AI capabilities. Continue investing in infrastructure, skills, and pilot projects to advance your AI maturity."
+      return t(locale, "assessmentDetail.readinessDescription.developing")
     case "emerging":
-      return "Your organization is beginning its AI journey. Focus on building foundational capabilities, data infrastructure, and developing AI literacy."
+      return t(locale, "assessmentDetail.readinessDescription.emerging")
     default:
-      return "Assessment complete. Review your dimension scores for detailed insights."
+      return t(locale, "assessmentDetail.readinessDescription.default")
   }
 }
 
@@ -87,6 +89,7 @@ export default async function AssessmentDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const locale = await getServerLocale()
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -134,9 +137,9 @@ export default async function AssessmentDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Assessment Report</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t(locale, "assessmentDetail.reportTitle")}</h1>
             <p className="text-muted-foreground">
-              Your detailed report is part of the extended package.
+              {t(locale, "assessmentDetail.extendedOnly")}
             </p>
           </div>
         </div>
@@ -146,21 +149,21 @@ export default async function AssessmentDetailPage({
           <CardContent className="p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Latest score</p>
+                <p className="text-sm text-muted-foreground">{t(locale, "assessmentDetail.latestScore")}</p>
                 <div className="mt-2 text-5xl font-bold">{typedAssessment.overall_score}%</div>
                 <Badge variant="outline" className="mt-3 capitalize">
-                  {getReadinessLabel(typedAssessment.readiness_level)}
+                  {getReadinessLabel(typedAssessment.readiness_level, locale)}
                 </Badge>
               </div>
               <div className="max-w-md space-y-3">
-                <h3 className="text-xl font-semibold">Unlock the full extended report</h3>
+                <h3 className="text-xl font-semibold">{t(locale, "assessmentDetail.unlockTitle")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Get full dimension breakdown, strengths, risks, and detailed opportunity analysis.
+                  {t(locale, "assessmentDetail.unlockDescription")}
                 </p>
                 <div className="flex gap-3">
-                  <UnlockReportButton label="Unlock Extended Access" variant="default" />
+                  <UnlockReportButton label={t(locale, "assessmentDetail.unlockAccess")} variant="default" />
                   <Link href="/portal/assessments">
-                    <Button variant="outline">Back to assessments</Button>
+                    <Button variant="outline">{t(locale, "assessmentDetail.backToAssessments")}</Button>
                   </Link>
                 </div>
               </div>
@@ -181,7 +184,7 @@ export default async function AssessmentDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Assessment Report</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t(locale, "assessmentDetail.reportTitle")}</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               {new Date(typedAssessment.created_at).toLocaleDateString("en-US", {
@@ -194,7 +197,7 @@ export default async function AssessmentDetailPage({
         </div>
         <Button variant="outline" className="gap-2">
           <Download className="h-4 w-4" />
-          Download PDF
+          {t(locale, "assessmentDetail.downloadPdf")}
         </Button>
       </div>
 
@@ -209,14 +212,14 @@ export default async function AssessmentDetailPage({
               </div>
               <div>
                 <Badge variant="outline" className="mb-2 text-base capitalize">
-                  {getReadinessLabel(typedAssessment.readiness_level)}
+                  {getReadinessLabel(typedAssessment.readiness_level, locale)}
                 </Badge>
-                <h2 className="text-2xl font-bold">AI Readiness Score</h2>
+                <h2 className="text-2xl font-bold">{t(locale, "assessmentDetail.scoreTitle")}</h2>
               </div>
             </div>
             <div className="flex-1 md:border-l md:pl-8">
               <p className="text-muted-foreground">
-                {getReadinessDescription(typedAssessment.readiness_level)}
+                {getReadinessDescription(typedAssessment.readiness_level, locale)}
               </p>
             </div>
           </div>
@@ -228,10 +231,10 @@ export default async function AssessmentDetailPage({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Dimension Breakdown
+            {t(locale, "assessmentDetail.dimensionBreakdown")}
           </CardTitle>
           <CardDescription>
-            Detailed scores across key AI readiness dimensions
+            {t(locale, "assessmentDetail.dimensionBreakdownDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -274,7 +277,7 @@ export default async function AssessmentDetailPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-emerald-600">
               <CheckCircle2 className="h-5 w-5" />
-              Strengths
+              {t(locale, "assessmentDetail.strengths")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -295,7 +298,7 @@ export default async function AssessmentDetailPage({
                   </li>
                 ))}
               {Object.entries(dimensionScores).filter(([_, value]) => (value as number) >= 60).length === 0 && (
-                <li className="text-muted-foreground">Focus on building foundational capabilities first</li>
+                <li className="text-muted-foreground">{t(locale, "assessmentDetail.foundationFocus")}</li>
               )}
             </ul>
           </CardContent>
@@ -305,7 +308,7 @@ export default async function AssessmentDetailPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-amber-600">
               <AlertTriangle className="h-5 w-5" />
-              Areas for Improvement
+              {t(locale, "assessmentDetail.improvements")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -328,7 +331,7 @@ export default async function AssessmentDetailPage({
               {Object.entries(dimensionScores).filter(([_, value]) => (value as number) < 60).length === 0 && (
                 <li className="text-emerald-600 flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5" />
-                  All dimensions performing well!
+                  {t(locale, "assessmentDetail.allGood")}
                 </li>
               )}
             </ul>
@@ -343,14 +346,14 @@ export default async function AssessmentDetailPage({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Lightbulb className="h-5 w-5" />
-                Identified Opportunities
+                {t(locale, "assessmentDetail.identifiedOpportunities")}
               </CardTitle>
               <Link href="/portal/opportunities">
-                <Button variant="ghost" size="sm">View All</Button>
+                <Button variant="ghost" size="sm">{t(locale, "dashboard.viewAll")}</Button>
               </Link>
             </div>
             <CardDescription>
-              AI opportunities identified from this assessment
+              {t(locale, "assessmentDetail.opportunitiesFromAssessment")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -373,7 +376,7 @@ export default async function AssessmentDetailPage({
                     )}
                     <div className="flex items-center gap-4 mt-2 text-sm">
                       <Badge variant="outline" className="capitalize">
-                        {opportunity.priority} priority
+                        {opportunity.priority} {t(locale, "assessmentDetail.priority")}
                       </Badge>
                       {opportunity.department && (
                         <span className="text-muted-foreground">{opportunity.department}</span>
@@ -384,7 +387,7 @@ export default async function AssessmentDetailPage({
                     <div className="font-semibold text-emerald-600">
                       ${parseFloat(String(opportunity.estimated_annual_savings || 0)).toLocaleString()}
                     </div>
-                    <div className="text-xs text-muted-foreground">Est. Annual Savings</div>
+                    <div className="text-xs text-muted-foreground">{t(locale, "assessmentDetail.estAnnualSavings")}</div>
                   </div>
                 </div>
               ))}

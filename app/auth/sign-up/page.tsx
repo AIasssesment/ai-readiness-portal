@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
+import { useLanguage } from "@/components/language-provider"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -19,6 +20,7 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,9 +59,9 @@ export default function SignUpPage() {
               <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Create Your Account</CardTitle>
+          <CardTitle className="text-2xl">{t("auth.signup.title")}</CardTitle>
           <CardDescription>
-            Get access to your personalized AI Readiness Portal
+            {t("auth.signup.subtitle")}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignUp}>
@@ -70,29 +72,29 @@ export default function SignUpPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="contactName">Your Name</Label>
+              <Label htmlFor="contactName">{t("auth.signup.yourName")}</Label>
               <Input
                 id="contactName"
                 type="text"
-                placeholder="John Smith"
+                placeholder={t("auth.signup.yourNamePlaceholder")}
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
+              <Label htmlFor="companyName">{t("auth.signup.companyName")}</Label>
               <Input
                 id="companyName"
                 type="text"
-                placeholder="Acme Corporation"
+                placeholder={t("auth.signup.companyNamePlaceholder")}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Work Email</Label>
+              <Label htmlFor="email">{t("auth.signup.workEmail")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -103,11 +105,11 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.signup.password")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a strong password"
+                placeholder={t("auth.signup.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -120,16 +122,16 @@ export default function SignUpPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
+                  {t("auth.signup.creating")}
                 </>
               ) : (
-                "Create Account"
+                t("auth.signup.createAccount")
               )}
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              Already have an account?{" "}
+              {t("auth.signup.haveAccount")}{" "}
               <Link href="/auth/login" className="text-primary hover:underline">
-                Sign in
+                {t("auth.signup.signIn")}
               </Link>
             </p>
           </CardFooter>

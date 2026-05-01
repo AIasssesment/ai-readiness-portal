@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { Building2, User, Mail, Users, Briefcase, Save, CheckCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useLanguage } from "@/components/language-provider"
 
 interface Client {
   id: string
@@ -47,6 +49,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const router = useRouter()
+  const { locale, setLocale, t } = useLanguage()
   const [formData, setFormData] = useState({
     company_name: "",
     contact_name: "",
@@ -109,6 +113,11 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLanguageChange = (nextLocale: "en" | "uk") => {
+    setLocale(nextLocale)
+    router.refresh()
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -120,53 +129,74 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
         <p className="text-muted-foreground">
-          Manage your company profile and account settings
+          {t("settings.subtitle")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
+          <CardTitle>{t("settings.language.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.language.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label htmlFor="site-language">{t("settings.language.siteLanguage")}</Label>
+          <Select value={locale} onValueChange={(value) => handleLanguageChange(value as "en" | "uk")}>
+            <SelectTrigger id="site-language" className="max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="uk">Українська</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Company Information
+            {t("settings.company.title")}
           </CardTitle>
           <CardDescription>
-            Update your company details for accurate assessments and reporting
+            {t("settings.company.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="company_name" className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-muted-foreground" />
-              Company Name
+              {t("settings.company.name")}
             </Label>
             <Input
               id="company_name"
               value={formData.company_name}
               onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-              placeholder="Enter company name"
+              placeholder={t("settings.company.namePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="contact_name" className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              Contact Name
+              {t("settings.contact.name")}
             </Label>
             <Input
               id="contact_name"
               value={formData.contact_name}
               onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-              placeholder="Your name"
+              placeholder={t("settings.contact.namePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="contact_email" className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              Contact Email
+              {t("settings.contact.email")}
             </Label>
             <Input
               id="contact_email"
@@ -181,14 +211,14 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="industry" className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
-                Industry
+                {t("settings.industry")}
               </Label>
               <Select 
                 value={formData.industry} 
                 onValueChange={(value) => setFormData({ ...formData, industry: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select industry" />
+                  <SelectValue placeholder={t("settings.industry.placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {industries.map((industry) => (
@@ -203,19 +233,19 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="company_size" className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                Company Size
+                {t("settings.companySize")}
               </Label>
               <Select 
                 value={formData.company_size} 
                 onValueChange={(value) => setFormData({ ...formData, company_size: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select size" />
+                  <SelectValue placeholder={t("settings.companySize.placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {companySizes.map((size) => (
                     <SelectItem key={size} value={size}>
-                      {size} employees
+                      {locale === "uk" ? `${size} співробітників` : `${size} employees`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -232,7 +262,7 @@ export default function SettingsPage() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
+              {saving ? t("common.saving") : saved ? t("settings.saved") : t("settings.saveChanges")}
             </Button>
           </div>
         </CardContent>
