@@ -118,15 +118,40 @@ export async function POST(request: Request) {
     }
 
     if (conversationId && latestUserText) {
+      const conversationMeta = await sql<Array<{ title: string; user_message_count: number | string }>>`
+        select
+          title,
+          (
+            select count(*)
+            from messages
+            where conversation_id = ${conversationId}
+              and role = 'user'
+          ) as user_message_count
+        from conversations
+        where id = ${conversationId}
+        limit 1
+      `
+      const currentTitle = conversationMeta[0]?.title
+      const userMessageCount = Number(conversationMeta[0]?.user_message_count ?? 0)
+
       await sql`
         insert into messages (conversation_id, role, content)
         values (${conversationId}, 'user', ${latestUserText})
       `
-      await sql`
-        update conversations
-        set updated_at = now()
-        where id = ${conversationId}
-      `
+
+      if (currentTitle === "New Chat" && userMessageCount === 0) {
+        await sql`
+          update conversations
+          set title = ${latestUserText.slice(0, 80)}, updated_at = now()
+          where id = ${conversationId}
+        `
+      } else {
+        await sql`
+          update conversations
+          set updated_at = now()
+          where id = ${conversationId}
+        `
+      }
     }
 
     const modelMessages = await convertToModelMessages(messages)

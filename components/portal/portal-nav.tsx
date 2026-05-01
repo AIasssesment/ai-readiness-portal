@@ -224,7 +224,10 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
               {t("portal.recently")}
             </p>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {recentChats.length > 0 ? (
               <div className="space-y-1">
                 {recentChats.map((chat) => (
