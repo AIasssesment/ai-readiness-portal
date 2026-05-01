@@ -8,6 +8,13 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 
 export default function ChatPage() {
@@ -111,11 +118,69 @@ function ChatSession({
     setInput("")
   }
 
+  const handleRenameChat = async () => {
+    if (!conversationId) return
+
+    const nextTitle = window.prompt(t("portal.chat.renamePlaceholder"), "")
+    const sanitized = nextTitle?.trim()
+    if (!sanitized) return
+
+    const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: sanitized }),
+    })
+    if (!response.ok) return
+    router.refresh()
+  }
+
+  const handleDeleteChat = async () => {
+    if (!conversationId) return
+    const shouldDelete = window.confirm(t("portal.chat.deleteConfirm"))
+    if (!shouldDelete) return
+
+    const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+      method: "DELETE",
+    })
+    if (!response.ok) return
+    router.push("/portal/chat")
+    router.refresh()
+  }
+
   return (
     <div className="-mb-8 flex h-[calc(100dvh-6rem)] min-h-[84vh] flex-col md:h-[calc(100dvh-5rem)]">
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-border/60 bg-card/80">
         <CardHeader className="border-b border-border/60 pb-4">
-          <CardTitle className="text-xl">{t("chat.title")}</CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-xl">{t("chat.title")}</CardTitle>
+            {conversationId ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    aria-label={t("portal.menu")}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-36">
+                  <DropdownMenuItem onClick={handleRenameChat}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    {t("portal.chat.rename")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleDeleteChat}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t("portal.chat.delete")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (

@@ -63,9 +63,10 @@ interface PortalNavProps {
     isStarred: boolean
     href: string
   }>
+  onNavigate?: () => void
 }
 
-export function PortalNav({ user, client, recentChats }: PortalNavProps) {
+export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -75,6 +76,9 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
   const [renameChatId, setRenameChatId] = useState<string | null>(null)
   const [renameTitle, setRenameTitle] = useState("")
   const [isRenaming, setIsRenaming] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteChatId, setDeleteChatId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { t } = useLanguage()
   const navItems = [
     { href: "/portal", label: t("portal.nav.dashboard"), icon: LayoutDashboard },
@@ -82,7 +86,6 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
     { href: "/portal/opportunities", label: t("portal.nav.opportunities"), icon: Lightbulb },
     { href: "/portal/workforce", label: t("portal.nav.workforce"), icon: Users },
     { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
-    { href: "/portal/chat", label: t("portal.nav.chat"), icon: MessagesSquare },
   ]
 
   const handleSignOut = async () => {
@@ -97,6 +100,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
     const payload = (await response.json()) as { id?: string }
     if (!payload.id) return
     router.push(`/portal/chat?conversationId=${payload.id}`)
+    onNavigate?.()
     router.refresh()
   }
 
@@ -126,18 +130,26 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
     router.refresh()
   }
 
-  const handleDeleteChat = async (chatId: string) => {
-    const shouldDelete = window.confirm(t("portal.chat.deleteConfirm"))
-    if (!shouldDelete) return
+  const openDeleteDialog = (chatId: string) => {
+    setDeleteChatId(chatId)
+    setDeleteDialogOpen(true)
+  }
 
-    const response = await fetch(`/api/chat/conversations/${chatId}`, {
+  const handleDeleteChat = async () => {
+    if (!deleteChatId) return
+
+    setIsDeleting(true)
+    const response = await fetch(`/api/chat/conversations/${deleteChatId}`, {
       method: "DELETE",
     })
+    setIsDeleting(false)
     if (!response.ok) return
 
-    if (activeConversationId === chatId) {
+    if (activeConversationId === deleteChatId) {
       router.push("/portal/chat")
     }
+    setDeleteDialogOpen(false)
+    setDeleteChatId(null)
     router.refresh()
   }
 
@@ -160,7 +172,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Brain className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold">{t("portal.title")}</span>
+          <span className="hidden font-semibold md:inline">{t("portal.title")}</span>
         </Link>
       </div>
 
@@ -239,7 +251,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                          className="h-7 w-7 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -254,7 +266,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
                           {chat.isStarred ? t("portal.chat.unstar") : t("portal.chat.star")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteChat(chat.id)}
+                          onClick={() => openDeleteDialog(chat.id)}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -336,6 +348,42 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
             </Button>
             <Button onClick={handleRenameChat} disabled={isRenaming || !renameTitle.trim()}>
               {isRenaming ? t("common.saving") : t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) setDeleteChatId(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("portal.chat.delete")}</DialogTitle>
+            <DialogDescription>
+              {t("portal.chat.deleteConfirm")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setDeleteChatId(null)
+              }}
+              disabled={isDeleting}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteChat}
+              disabled={isDeleting || !deleteChatId}
+            >
+              {isDeleting ? t("common.saving") : t("portal.chat.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

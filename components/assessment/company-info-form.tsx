@@ -113,9 +113,9 @@ export function CompanyInfoForm() {
           
           <Button 
             type="submit" 
-            className="mt-2 h-14 w-full rounded-xl bg-primary font-[family-name:var(--font-syne)] text-lg font-bold text-primary-foreground hover:bg-primary/90"
+            className="mt-2 min-h-14 w-full rounded-xl bg-primary px-4 py-3 font-[family-name:var(--font-syne)] text-base font-bold leading-tight text-primary-foreground !whitespace-normal hover:bg-primary/90 sm:text-lg"
           >
-            Unlock My Free Assessment
+            <span className="text-center break-words">Unlock My Free Assessment</span>
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </form>
