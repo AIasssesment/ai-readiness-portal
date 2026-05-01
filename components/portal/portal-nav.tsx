@@ -4,6 +4,15 @@ import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +37,7 @@ import {
   User,
   Brain
 } from "lucide-react"
+import { useState } from "react"
 
 type AuthUser = {
   id: string
@@ -67,6 +77,10 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
   const router = useRouter()
   const supabase = createClient()
   const activeConversationId = searchParams.get("conversationId")
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [renameChatId, setRenameChatId] = useState<string | null>(null)
+  const [renameTitle, setRenameTitle] = useState("")
+  const [isRenaming, setIsRenaming] = useState(false)
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -83,15 +97,29 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
     router.refresh()
   }
 
-  const handleRenameChat = async (chatId: string, currentTitle: string) => {
-    const nextTitle = window.prompt("Rename chat", currentTitle.replace(/^★\s+/, ""))
+  const openRenameDialog = (chatId: string, currentTitle: string) => {
+    setRenameChatId(chatId)
+    setRenameTitle(currentTitle.replace(/^★\s+/, ""))
+    setRenameDialogOpen(true)
+  }
+
+  const handleRenameChat = async () => {
+    if (!renameChatId) return
+    const nextTitle = renameTitle.trim()
     if (!nextTitle) return
-    const response = await fetch(`/api/chat/conversations/${chatId}`, {
+
+    setIsRenaming(true)
+    const response = await fetch(`/api/chat/conversations/${renameChatId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: nextTitle }),
     })
+    setIsRenaming(false)
     if (!response.ok) return
+
+    setRenameDialogOpen(false)
+    setRenameChatId(null)
+    setRenameTitle("")
     router.refresh()
   }
 
@@ -212,7 +240,7 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem onClick={() => handleRenameChat(chat.id, chat.rawTitle)}>
+                        <DropdownMenuItem onClick={() => openRenameDialog(chat.id, chat.rawTitle)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Rename
                         </DropdownMenuItem>
@@ -273,6 +301,40 @@ export function PortalNav({ user, client, recentChats }: PortalNavProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename chat</DialogTitle>
+            <DialogDescription>
+              Update the conversation title shown in your recent chats.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Input
+            value={renameTitle}
+            onChange={(event) => setRenameTitle(event.target.value)}
+            placeholder="Enter chat title"
+            maxLength={120}
+          />
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRenameDialogOpen(false)
+                setRenameChatId(null)
+                setRenameTitle("")
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRenameChat} disabled={isRenaming || !renameTitle.trim()}>
+              {isRenaming ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   )
 }

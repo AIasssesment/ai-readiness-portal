@@ -35,30 +35,30 @@ type OpportunityRow = {
 
 function getPriorityColor(priority: string) {
   switch (priority) {
-    case "high": return "bg-red-100 text-red-700 border-red-200"
-    case "medium": return "bg-amber-100 text-amber-700 border-amber-200"
-    case "low": return "bg-emerald-100 text-emerald-700 border-emerald-200"
-    default: return "bg-slate-100 text-slate-700 border-slate-200"
+    case "high": return "border-red-500/30 bg-red-500/15 text-red-200"
+    case "medium": return "border-amber-500/30 bg-amber-500/15 text-amber-200"
+    case "low": return "border-emerald-500/30 bg-emerald-500/15 text-emerald-200"
+    default: return "border-slate-500/30 bg-slate-500/15 text-slate-200"
   }
 }
 
 function getComplexityColor(complexity: string) {
   switch (complexity) {
-    case "high": return "bg-purple-100 text-purple-700"
-    case "medium": return "bg-blue-100 text-blue-700"
-    case "low": return "bg-green-100 text-green-700"
-    default: return "bg-slate-100 text-slate-700"
+    case "high": return "border-purple-500/30 bg-purple-500/15 text-purple-200"
+    case "medium": return "border-blue-500/30 bg-blue-500/15 text-blue-200"
+    case "low": return "border-green-500/30 bg-green-500/15 text-green-200"
+    default: return "border-slate-500/30 bg-slate-500/15 text-slate-200"
   }
 }
 
 function getStatusColor(status: string) {
   switch (status) {
-    case "completed": return "bg-emerald-100 text-emerald-700"
-    case "in_progress": return "bg-blue-100 text-blue-700"
-    case "approved": return "bg-purple-100 text-purple-700"
-    case "in_review": return "bg-amber-100 text-amber-700"
-    case "rejected": return "bg-red-100 text-red-700"
-    default: return "bg-slate-100 text-slate-700"
+    case "completed": return "border-emerald-500/30 bg-emerald-500/15 text-emerald-200"
+    case "in_progress": return "border-blue-500/30 bg-blue-500/15 text-blue-200"
+    case "approved": return "border-purple-500/30 bg-purple-500/15 text-purple-200"
+    case "in_review": return "border-amber-500/30 bg-amber-500/15 text-amber-200"
+    case "rejected": return "border-red-500/30 bg-red-500/15 text-red-200"
+    default: return "border-slate-500/30 bg-slate-500/15 text-slate-200"
   }
 }
 
@@ -193,72 +193,72 @@ export default async function OpportunitiesPage() {
           {opportunities.map((opportunity) => (
             <Card
               key={opportunity.id}
-              className="group border-border/60 bg-card/75 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
+              className="group overflow-hidden border-border/70 bg-gradient-to-b from-slate-950/95 to-slate-900/90 shadow-[0_0_0_1px_rgba(148,163,184,0.15)] backdrop-blur-sm transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(45,212,191,0.35)]"
             >
               <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                  <div className="flex-1 space-y-3">
+                <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className={`mt-1 h-3 w-3 rounded-full shrink-0 ${
                         opportunity.priority === "high" ? "bg-red-500" :
                         opportunity.priority === "medium" ? "bg-amber-500" : "bg-emerald-500"
                       }`} />
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+                        <h3 className="text-2xl font-semibold tracking-tight text-slate-100 transition-colors group-hover:text-white">
                           {opportunity.title}
                         </h3>
                         {opportunity.description && (
-                          <p className="mt-1 text-muted-foreground">{opportunity.description}</p>
+                          <p className="mt-1 text-base text-slate-300/90">{opportunity.description}</p>
                         )}
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className={getPriorityColor(opportunity.priority)}>
+                      <Badge variant="outline" className={`font-medium ${getPriorityColor(opportunity.priority)}`}>
                         {opportunity.priority} priority
                       </Badge>
-                      <Badge variant="secondary" className={getComplexityColor(opportunity.complexity)}>
+                      <Badge variant="outline" className={`font-medium ${getComplexityColor(opportunity.complexity)}`}>
                         <Gauge className="h-3 w-3 mr-1" />
                         {opportunity.complexity} complexity
                       </Badge>
                       {opportunity.department && (
-                        <Badge variant="secondary">
+                        <Badge variant="outline" className="border-slate-400/30 bg-slate-700/30 text-slate-200">
                           <Building2 className="h-3 w-3 mr-1" />
                           {opportunity.department}
                         </Badge>
                       )}
-                      <Badge variant="secondary" className={getStatusColor(opportunity.status)}>
+                      <Badge variant="outline" className={`font-medium ${getStatusColor(opportunity.status)}`}>
                         {opportunity.status.replace(/_/g, " ")}
                       </Badge>
                     </div>
 
                     {opportunity.implementation_timeline && (
-                      <p className="text-sm text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5 inline mr-1" />
+                      <p className="text-sm text-slate-300/80">
+                        <Clock className="mr-1 inline h-3.5 w-3.5" />
                         Timeline: {opportunity.implementation_timeline}
                       </p>
                     )}
                   </div>
 
-                  <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3 lg:min-w-48 lg:text-right">
+                  <div className="grid gap-4 border-t border-slate-700/70 pt-4 sm:grid-cols-2">
                     <div className="space-y-0.5">
-                      <div className="text-2xl font-bold text-emerald-600">
+                      <div className="text-5xl font-bold tracking-tight text-emerald-400">
                         ${parseFloat(String(opportunity.estimated_annual_savings ?? 0)).toLocaleString()}
                       </div>
-                      <div className="text-xs text-muted-foreground">Est. Annual Savings</div>
+                      <div className="text-xl text-slate-300/80">Est. Annual Savings</div>
                     </div>
                     <div className="space-y-0.5">
-                      <div className="text-lg font-semibold">
+                      <div className="text-5xl font-bold tracking-tight text-slate-100">
                         {(parseFloat(String(opportunity.estimated_hours_saved_weekly ?? 0)) || 0).toLocaleString()} hrs/week
                       </div>
-                      <div className="text-xs text-muted-foreground">Time Savings</div>
+                      <div className="text-xl text-slate-300/80">Time Savings</div>
                     </div>
                   </div>
                 </div>
 
                 {opportunity.notes && (
-                  <div className="mt-4 rounded-lg border border-border/60 bg-muted/20 p-3">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="mt-4 rounded-lg border border-slate-600/50 bg-slate-800/40 p-3">
+                    <p className="text-sm text-slate-300/90">
                       <strong>Notes:</strong> {opportunity.notes}
                     </p>
                   </div>

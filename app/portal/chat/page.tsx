@@ -104,14 +104,14 @@ function ChatSession({
   }
 
   return (
-    <div className="grid h-full min-h-[70vh] grid-rows-[1fr_auto] gap-4">
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>AI Advisor</CardTitle>
+    <div className="-mb-8 flex h-[calc(100dvh-6rem)] min-h-[84vh] flex-col md:h-[calc(100dvh-5rem)]">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-border/60 bg-card/80">
+        <CardHeader className="border-b border-border/60 pb-4">
+          <CardTitle className="text-xl">AI Advisor</CardTitle>
         </CardHeader>
-        <CardContent className="h-[60vh] overflow-y-auto space-y-4">
+        <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (
-            <p className="text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
               Ask about your score, opportunities, or job-risk report.
             </p>
           )}
@@ -119,9 +119,15 @@ function ChatSession({
           {messages.map((message) => (
             <div
               key={message.id}
-              className={message.role === "user" ? "ml-auto max-w-[80%]" : "max-w-[80%]"}
+              className={message.role === "user" ? "ml-auto max-w-[82%]" : "max-w-[82%]"}
             >
-              <div className={message.role === "user" ? "rounded-lg bg-primary p-3 text-primary-foreground" : "rounded-lg bg-muted p-3"}>
+              <div
+                className={
+                  message.role === "user"
+                    ? "rounded-2xl rounded-br-md bg-primary px-4 py-3 text-primary-foreground shadow-sm"
+                    : "rounded-2xl rounded-bl-md border border-border/60 bg-muted/45 px-4 py-3"
+                }
+              >
                 {message.parts
                   .filter((p) => p.type === "text")
                   .map((p, index) => (
@@ -134,21 +140,24 @@ function ChatSession({
           ))}
           <div ref={bottomRef} />
         </CardContent>
-      </Card>
 
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask AI Advisor..."
-          rows={3}
-        />
-        <div className="flex justify-end">
-          <Button type="submit" disabled={status === "streaming" || !input.trim()}>
-            {status === "streaming" ? "Thinking..." : "Send"}
-          </Button>
+        <div className="sticky bottom-0 border-t border-border/60 bg-card/95 px-4 pb-4 pt-3 backdrop-blur">
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask AI Advisor..."
+              rows={2}
+              className="resize-none rounded-2xl border-border/70 bg-background/70"
+            />
+            <div className="flex justify-end">
+              <Button type="submit" disabled={status === "streaming" || !input.trim()}>
+                {status === "streaming" ? "Thinking..." : "Send"}
+              </Button>
+            </div>
+          </form>
         </div>
-      </form>
+      </Card>
     </div>
   )
 }
