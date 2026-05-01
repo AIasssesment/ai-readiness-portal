@@ -14,6 +14,10 @@ type RiskRole = {
   role_name: string
   department: string | null
   risk_score: number
+  employee_count: number | null
+  at_risk_headcount: number | null
+  benchmark_risk_score: number | null
+  risk_data_source: string | null
   timeline_months_min: number | null
   timeline_months_max: number | null
   reasoning: string | null
@@ -79,6 +83,14 @@ export default async function JobRiskPage({
     )
   }
 
+  const workforceRows = await sql<Array<{ role_title: string; employee_count: number }>>`
+    select role_title, employee_count
+    from workforce_roles
+    where client_id = ${client.id}
+    order by employee_count desc
+  `
+  const workforceTotal = workforceRows.reduce((sum, row) => sum + row.employee_count, 0)
+
   const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null; generated_at: string }>>`
     select id, overall_risk_score, executive_summary, generated_at
     from job_risk_reports
@@ -94,10 +106,26 @@ export default async function JobRiskPage({
         <CardHeader>
           <CardTitle>Job Risk Report</CardTitle>
           <CardDescription>
-            Generate role-by-role disruption risk, timelines, and reskilling guidance.
+            Add workforce role counts first, then generate role-by-role disruption risk.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 rounded-lg border border-border/50 bg-muted/30 p-3">
+            <p className="text-sm font-medium">Workforce roles</p>
+            {workforceRows.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                {workforceRows.slice(0, 6).map((row) => (
+                  <li key={row.role_title}>
+                    {row.role_title}: {row.employee_count}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No workforce roles found. Add roles via API <code>/api/workforce/roles</code> before generating.
+              </p>
+            )}
+          </div>
           <JobRiskGenerateButton />
         </CardContent>
       </Card>
@@ -110,6 +138,10 @@ export default async function JobRiskPage({
       role_name,
       department,
       risk_score,
+      employee_count,
+      at_risk_headcount,
+      benchmark_risk_score,
+      risk_data_source,
       timeline_months_min,
       timeline_months_max,
       reasoning,
@@ -128,6 +160,8 @@ export default async function JobRiskPage({
     selectedDepartment === "all"
       ? roles
       : roles.filter((role) => (role.department || "").toLowerCase() === selectedDepartment.toLowerCase())
+  const totalEmployees = roles.reduce((sum, role) => sum + (role.employee_count || 0), 0)
+  const totalAtRisk = roles.reduce((sum, role) => sum + Number(role.at_risk_headcount || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -143,6 +177,16 @@ export default async function JobRiskPage({
           <CardDescription>
             {latestReport.executive_summary || "No summary available"}
           </CardDescription>
+          <div className="grid gap-2 pt-1 sm:grid-cols-2">
+            <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total employees</p>
+              <p className="text-lg font-semibold">{totalEmployees.toLocaleString()}</p>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Estimated at-risk employees</p>
+              <p className="text-lg font-semibold text-emerald-500">{Math.round(totalAtRisk).toLocaleString()}</p>
+            </div>
+          </div>
         </CardHeader>
       </Card>
 
@@ -203,6 +247,9 @@ export default async function JobRiskPage({
                       {Number(role.risk_score).toFixed(1)}
                     </p>
                     <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Risk</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {Math.round(Number(role.at_risk_headcount || 0)).toLocaleString()} / {(role.employee_count || 0).toLocaleString()} people
+                    </p>
                   </div>
                 </div>
 
@@ -259,6 +306,13 @@ export default async function JobRiskPage({
           </AccordionItem>
         ))}
       </Accordion>
+      {filteredRoles.length === 0 && (
+        <Card className="border-border/40 bg-card/80">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No roles found for the selected department.
+          </CardContent>
+        </Card>
+      )}
 
       <JobRiskGenerateButton />
     </div>

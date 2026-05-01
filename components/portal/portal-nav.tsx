@@ -27,6 +27,7 @@ import {
   Lightbulb, 
   ShieldAlert,
   MessagesSquare,
+  Users,
   Plus,
   MoreHorizontal,
   Pencil,
@@ -67,6 +68,7 @@ const navItems = [
   { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
   { href: "/portal/assessments", label: "Assessments", icon: FileText },
   { href: "/portal/opportunities", label: "Opportunities", icon: Lightbulb },
+  { href: "/portal/workforce", label: "Workforce", icon: Users },
   { href: "/portal/job-risk", label: "Job Risk", icon: ShieldAlert },
   { href: "/portal/chat", label: "Chat", icon: MessagesSquare },
 ]
