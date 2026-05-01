@@ -30,6 +30,7 @@ import {
   MessagesSquare,
   Users,
   Plus,
+  Search,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -39,7 +40,7 @@ import {
   User,
   Brain
 } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 type AuthUser = {
   id: string
@@ -79,7 +80,14 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false)
+  const [chatSearch, setChatSearch] = useState("")
   const { t } = useLanguage()
+  const filteredChats = useMemo(() => {
+    const query = chatSearch.trim().toLowerCase()
+    if (!query) return recentChats
+    return recentChats.filter((chat) => chat.title.toLowerCase().includes(query))
+  }, [chatSearch, recentChats])
   const navItems = [
     { href: "/portal", label: t("portal.nav.dashboard"), icon: LayoutDashboard },
     { href: "/portal/assessments", label: t("portal.nav.assessments"), icon: FileText },
@@ -186,11 +194,33 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
         <Button
           variant="secondary"
           size="sm"
-          className="mt-3 mb-3 justify-start"
+          className="mt-3 mb-2 justify-start"
           onClick={handleCreateChat}
         >
           <Plus className="mr-2 h-4 w-4" />
           {t("portal.createChat")}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-3 hidden justify-start md:flex"
+          onClick={() => setSearchDialogOpen(true)}
+        >
+          <Search className="mr-2 h-4 w-4" />
+          {t("portal.chat.searchPlaceholder")}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-3 justify-start md:hidden"
+          onClick={() => {
+            router.push("/portal/chat?openSearch=1")
+            onNavigate?.()
+          }}
+        >
+          <Search className="mr-2 h-4 w-4" />
+          {t("portal.chat.searchPlaceholder")}
         </Button>
 
         <nav className="space-y-1">
@@ -389,6 +419,52 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
               {isDeleting ? t("common.saving") : t("portal.chat.delete")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t("portal.chat.searchPlaceholder")}</DialogTitle>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={chatSearch}
+            onChange={(event) => setChatSearch(event.target.value)}
+            placeholder={t("portal.chat.searchPlaceholder")}
+          />
+          <div className="max-h-[55vh] overflow-y-auto rounded-md border bg-muted/20 p-2">
+            <Link
+              href="/portal/chat"
+              onClick={() => setSearchDialogOpen(false)}
+              className="mb-1 flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Pencil className="h-4 w-4" />
+              {t("portal.createChat")}
+            </Link>
+            {filteredChats.length > 0 ? (
+              <div className="space-y-1">
+                {filteredChats.map((chat) => (
+                  <Link
+                    key={chat.id}
+                    href={chat.href}
+                    onClick={() => setSearchDialogOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <MessagesSquare className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{chat.title}</span>
+                    {chat.isStarred ? (
+                      <Star className="h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />
+                    ) : null}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="px-2 py-2 text-xs text-muted-foreground">
+                {chatSearch.trim() ? t("portal.chat.noSearchResults") : t("portal.chat.noRecent")}
+              </p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </aside>

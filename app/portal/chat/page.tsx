@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { UIMessage } from "ai"
 import { DefaultChatTransport } from "ai"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -14,12 +16,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { MoreHorizontal, MessagesSquare, Pencil, Search, Trash2, X } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 
 export default function ChatPage() {
   const searchParams = useSearchParams()
   const conversationId = searchParams.get("conversationId")
+  const showMobileSearch = searchParams.get("openSearch") === "1"
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const [historyKey, setHistoryKey] = useState(0)
@@ -65,13 +68,106 @@ export default function ChatPage() {
   }
 
   return (
-    <ChatSession
-      key={`${conversationId ?? "new"}-${historyKey}`}
-      conversationId={conversationId}
-      initialMessages={initialMessages}
-      locale={locale}
-      t={t}
-    />
+    <>
+      {showMobileSearch ? <MobileChatSearchOverlay t={t} /> : null}
+      <ChatSession
+        key={`${conversationId ?? "new"}-${historyKey}`}
+        conversationId={conversationId}
+        initialMessages={initialMessages}
+        locale={locale}
+        t={t}
+      />
+    </>
+  )
+}
+
+function MobileChatSearchOverlay({
+  t,
+}: {
+  t: (key: import("@/lib/i18n").TranslationKey) => string
+}) {
+  const router = useRouter()
+  const [query, setQuery] = useState("")
+  const [conversations, setConversations] = useState<
+    Array<{ id: string; title: string; isStarred: boolean; href: string }>
+  >([])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const response = await fetch("/api/chat/conversations")
+      if (!response.ok) return
+      const payload = (await response.json()) as {
+        conversations?: Array<{ id: string; title: string; isStarred: boolean; href: string }>
+      }
+      if (!cancelled) {
+        setConversations(payload.conversations ?? [])
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const filtered = conversations.filter((chat) =>
+    chat.title.toLowerCase().includes(query.trim().toLowerCase()),
+  )
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background md:hidden">
+      <div className="border-b p-3">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={query}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
+              placeholder={t("portal.chat.searchPlaceholder")}
+              className="h-10 pl-9"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/portal/chat")}
+            aria-label={t("common.cancel")}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="h-[calc(100dvh-4.5rem)] overflow-y-auto p-3">
+        <Link
+          href="/portal/chat"
+          className="mb-2 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Pencil className="h-4 w-4" />
+          {t("portal.createChat")}
+        </Link>
+
+        {filtered.length > 0 ? (
+          <div className="space-y-1">
+            {filtered.map((chat) => (
+              <Link
+                key={chat.id}
+                href={chat.href}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <MessagesSquare className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{chat.title}</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="px-2 py-2 text-xs text-muted-foreground">
+            {query.trim() ? t("portal.chat.noSearchResults") : t("portal.chat.noRecent")}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 
