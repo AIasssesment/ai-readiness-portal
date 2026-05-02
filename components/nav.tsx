@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/language-provider'
-import { tr } from '@/lib/i18n'
 import { LayoutDashboard, LogIn } from 'lucide-react'
 
 interface NavProps {
@@ -13,7 +12,7 @@ interface NavProps {
 }
 
 export function Nav({ onStartAssessment }: NavProps) {
-  const { locale } = useLanguage()
+  const { locale, t } = useLanguage()
   const supabase = useMemo(() => createClient(), [])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -39,21 +38,21 @@ export function Nav({ onStartAssessment }: NavProps) {
               <Link href="/portal">
                 <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                   <LayoutDashboard className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tr(locale, 'My Portal', 'Мій портал')}</span>
+                  <span className="hidden sm:inline">{t('nav.myPortal')}</span>
                 </Button>
               </Link>
             ) : (
               <>
-                <Link href="/auth/login">
+                <Link href={`/${locale}/auth/login`}>
                   <Button variant="ghost" size="sm" className="gap-2 rounded-lg">
                     <LogIn className="h-4 w-4" />
-                    <span className="hidden sm:inline">{tr(locale, 'Sign In', 'Увійти')}</span>
+                    <span className="hidden sm:inline">{t('nav.signIn')}</span>
                   </Button>
                 </Link>
-                <Link href="/auth/sign-up">
+                <Link href={`/${locale}/auth/sign-up`}>
                   <Button variant="outline" size="sm" className="rounded-lg">
-                    <span className="hidden sm:inline">{tr(locale, 'Get Started', 'Почати')}</span>
-                    <span className="sm:hidden">{tr(locale, 'Sign up', 'Реєстрація')}</span>
+                    <span className="hidden sm:inline">{t('nav.getStarted')}</span>
+                    <span className="sm:hidden">{t('nav.signUpShort')}</span>
                   </Button>
                 </Link>
               </>
@@ -64,7 +63,7 @@ export function Nav({ onStartAssessment }: NavProps) {
           onClick={onStartAssessment}
           className="rounded-lg bg-primary px-4 py-2 font-[family-name:var(--font-syne)] text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:px-5"
         >
-          {tr(locale, 'Apply Now', 'Подати заявку')}
+          {t('nav.applyNow')}
         </Button>
       </div>
     </nav>

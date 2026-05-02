@@ -64,7 +64,7 @@ export default async function JobRiskPage({
 }) {
   const locale = await getServerLocale()
   const user = await getSessionUser()
-  if (!user) redirect("/auth/login")
+  if (!user) redirect(`/${locale}/auth/login`)
   const params = await searchParams
   const selectedDepartment = params?.department || "all"
 

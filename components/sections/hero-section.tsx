@@ -3,8 +3,10 @@
 import { Play } from 'lucide-react'
 import { useState } from 'react'
 import { CompanyInfoForm } from '@/components/assessment/company-info-form'
+import { useLanguage } from '@/components/language-provider'
 
 export function HeroSection() {
+  const { t } = useLanguage()
   const [showVideo, setShowVideo] = useState(false)
 
   return (
@@ -23,17 +25,17 @@ export function HeroSection() {
         <div className="mb-10 text-center md:mb-14">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
             <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-            Free Assessment &bull; 3 Minutes &bull; Instant Score
+            {t('landing.hero.badge')}
           </div>
 
           <h1 className="mx-auto mb-5 max-w-4xl font-[family-name:var(--font-syne)] text-4xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            <span className="text-balance">Know Your RPA Readiness.</span>
+            <span className="text-balance">{t('landing.hero.title1')}</span>
             <br />
-            <span className="text-primary">Get Matched with Ukrainian Experts.</span>
+            <span className="text-primary">{t('landing.hero.title2')}</span>
           </h1>
 
           <p className="mx-auto max-w-xl text-lg font-light text-muted-foreground">
-            Watch how Ukrainian RPA teams deliver world-class automation — then apply to unlock your assessment.
+            {t('landing.hero.subtitle')}
           </p>
         </div>
 
@@ -48,7 +50,7 @@ export function HeroSection() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40 transition-transform group-hover:scale-110">
                     <Play className="ml-1 h-6 w-6 fill-primary-foreground text-primary-foreground" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Watch: How Ukrainian RPA Teams Work</p>
+                  <p className="text-sm text-muted-foreground">{t('landing.hero.videoHint')}</p>
                 </div>
               ) : (
                 <iframe
@@ -56,7 +58,7 @@ export function HeroSection() {
                   src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  title="RPA teams overview"
+                  title={t('landing.hero.videoTitle')}
                 />
               )}
             </div>

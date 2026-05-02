@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import type { CompanyInfo, AssessmentAnswer, AssessmentResults, ExtendedReportData, DimensionScores } from './types'
-import { ASSESSMENT_QUESTIONS, ADVICE_MAP } from './assessment-data'
+import { ASSESSMENT_QUESTIONS } from './assessment-data'
 
 interface AssessmentStore {
   // Form state
@@ -44,11 +44,11 @@ function calculateDimensionScore(dimension: string, answers: AssessmentAnswer[])
   return Math.round((total / maxTotal) * 100)
 }
 
-function getTierInfo(score: number): { tier: 'high' | 'good' | 'early' | 'explore'; label: string } {
-  if (score >= 75) return { tier: 'high', label: 'High Readiness - Ready to Start' }
-  if (score >= 60) return { tier: 'good', label: 'Good Potential - Nearly There' }
-  if (score >= 45) return { tier: 'early', label: 'Early Stage - Foundation Needed' }
-  return { tier: 'explore', label: 'Exploratory - Just Getting Started' }
+function getTierInfo(score: number): { tier: 'high' | 'good' | 'early' | 'explore' } {
+  if (score >= 75) return { tier: 'high' }
+  if (score >= 60) return { tier: 'good' }
+  if (score >= 45) return { tier: 'early' }
+  return { tier: 'explore' }
 }
 
 // Convert tier to readiness level for database
@@ -461,8 +461,6 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
         overallScore,
         dimensionScores,
         tier: tierInfo.tier,
-        tierLabel: tierInfo.label,
-        advice: ADVICE_MAP[tierInfo.tier],
       }
       
       const extendedReport = generateExtendedReport(results)

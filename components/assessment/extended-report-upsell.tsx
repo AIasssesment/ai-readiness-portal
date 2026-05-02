@@ -1,86 +1,54 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  Lock, 
-  CheckCircle2, 
-  FileText, 
-  TrendingUp, 
-  Target, 
-  Layers, 
-  Calendar, 
-  BarChart3, 
-  AlertTriangle, 
-  Map, 
+import {
+  Lock,
+  CheckCircle2,
+  FileText,
+  TrendingUp,
+  Target,
+  Layers,
+  Calendar,
+  BarChart3,
+  AlertTriangle,
+  Map,
   FileBarChart,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAssessmentStore } from '@/lib/assessment-store'
+import { useLanguage } from '@/components/language-provider'
+import type { TranslationKey } from '@/lib/i18n'
 
-const EXTENDED_FEATURES = [
-  {
-    icon: TrendingUp,
-    title: 'Readiness Score',
-    description: 'Technical, organizational, and process maturity breakdown',
-  },
-  {
-    icon: AlertTriangle,
-    title: 'Risk Index',
-    description: 'Risk assessment with severity levels and mitigation strategies',
-  },
-  {
-    icon: Target,
-    title: 'Top 5 Automation Opportunities',
-    description: 'Prioritized list with ROI estimates and implementation timelines',
-  },
-  {
-    icon: BarChart3,
-    title: 'Cost-Benefit Analysis',
-    description: 'Projected savings, implementation costs, and 5-year ROI',
-  },
-  {
-    icon: Layers,
-    title: 'Recommended Tech Stack',
-    description: 'Curated tools and platforms tailored to your needs',
-  },
-  {
-    icon: Calendar,
-    title: '90-Day Action Plan',
-    description: 'Step-by-step roadmap with milestones',
-  },
-  {
-    icon: FileBarChart,
-    title: 'Industry Benchmarks',
-    description: 'Compare to industry averages and top performers',
-  },
-  {
-    icon: AlertTriangle,
-    title: 'AI Disruption Risk',
-    description: 'Roles at risk and workforce transition recommendations',
-  },
-  {
-    icon: Map,
-    title: 'Implementation Roadmap',
-    description: 'Quarterly plan with initiatives and dependencies',
-  },
-  {
-    icon: FileText,
-    title: 'Executive Summary',
-    description: 'Key findings and strategic recommendations',
-  },
+const FEATURE_ICONS = [
+  TrendingUp,
+  AlertTriangle,
+  Target,
+  BarChart3,
+  Layers,
+  Calendar,
+  FileBarChart,
+  AlertTriangle,
+  Map,
+  FileText,
 ]
 
 export function ExtendedReportUpsell() {
+  const { t } = useLanguage()
   const [showCheckout, setShowCheckout] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const purchaseExtendedReport = useAssessmentStore((state) => state.purchaseExtendedReport)
   const results = useAssessmentStore((state) => state.results)
 
+  const companyName = results?.companyInfo.companyName?.trim()
+  const subline = t('extendedUpsell.subline').replace(
+    '{company}',
+    companyName || t('extendedUpsell.companyFallback'),
+  )
+
   const handlePurchase = async () => {
     setIsProcessing(true)
-    // Simulate payment processing
     await new Promise((resolve) => setTimeout(resolve, 2000))
     purchaseExtendedReport()
     setShowCheckout(false)
@@ -91,115 +59,94 @@ export function ExtendedReportUpsell() {
     <>
       <div className="bg-secondary px-6 py-16">
         <div className="mx-auto max-w-4xl">
-          {/* Header */}
           <div className="mb-8 overflow-hidden rounded-2xl border border-primary/30 bg-background">
             <div className="flex items-center justify-between bg-primary px-6 py-3">
               <div className="flex items-center gap-2 text-primary-foreground">
                 <Lock className="h-4 w-4" />
-                <span className="font-[family-name:var(--font-syne)] font-bold">Extended Report</span>
+                <span className="font-[family-name:var(--font-syne)] font-bold">{t('extendedUpsell.badge')}</span>
               </div>
               <span className="rounded-full bg-primary-foreground px-3 py-1 text-sm font-bold text-primary">
-                $29 One-Time
+                {t('extendedUpsell.price')}
               </span>
             </div>
-            
+
             <div className="p-6 sm:p-8">
-              <h3 className="mb-2 font-[family-name:var(--font-syne)] text-2xl font-bold">
-                Unlock Your Complete Automation Blueprint
-              </h3>
-              <p className="mb-8 text-muted-foreground">
-                Get actionable insights, detailed roadmaps, and expert recommendations tailored to {results?.companyInfo.companyName || 'your company'}
-              </p>
+              <h3 className="mb-2 font-[family-name:var(--font-syne)] text-2xl font-bold">{t('extendedUpsell.headline')}</h3>
+              <p className="mb-8 text-muted-foreground">{subline}</p>
 
-              {/* Features Grid */}
               <div className="mb-8 grid gap-3 sm:grid-cols-2">
-                {EXTENDED_FEATURES.map((feature) => {
-                  const Icon = feature.icon
-                  return (
-                    <div 
-                      key={feature.title} 
-                      className="flex items-start gap-3 rounded-xl bg-secondary p-4"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <Icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{feature.title}</p>
-                        <p className="text-xs text-muted-foreground">{feature.description}</p>
-                      </div>
+                {FEATURE_ICONS.map((Icon, i) => (
+                  <div key={i} className="flex items-start gap-3 rounded-xl bg-secondary p-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <Icon className="h-4 w-4 text-primary" />
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Value Props */}
-              <div className="mb-8 flex flex-wrap justify-center gap-x-6 gap-y-2 border-y border-border py-4">
-                {[
-                  'Instant PDF download',
-                  'Implementation guides',
-                  'ROI calculator included',
-                  'Lifetime access',
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    <span className="text-foreground">{item}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {t(`extendedUpsell.f${i}.title` as TranslationKey)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t(`extendedUpsell.f${i}.desc` as TranslationKey)}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* CTA */}
+              <div className="mb-8 flex flex-wrap justify-center gap-x-6 gap-y-2 border-y border-border py-4">
+                {(['extendedUpsell.value1', 'extendedUpsell.value2', 'extendedUpsell.value3', 'extendedUpsell.value4'] as const).map((key) => (
+                  <div key={key} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <span className="text-foreground">{t(key)}</span>
+                  </div>
+                ))}
+              </div>
+
               <div className="text-center">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="h-14 w-full rounded-xl bg-primary px-12 font-[family-name:var(--font-syne)] text-lg font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto"
                   onClick={() => setShowCheckout(true)}
                 >
-                  Get Extended Report - $29
+                  {t('extendedUpsell.cta')}
                 </Button>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Secure payment. Instant delivery. 30-day money-back guarantee.
-                </p>
+                <p className="mt-3 text-xs text-muted-foreground">{t('extendedUpsell.secureNote')}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Checkout Dialog */}
       <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
         <DialogContent className="border-border bg-background sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-[family-name:var(--font-syne)] text-xl">Complete Your Purchase</DialogTitle>
-            <DialogDescription>
-              Get instant access to your Extended Automation Report
-            </DialogDescription>
+            <DialogTitle className="font-[family-name:var(--font-syne)] text-xl">{t('unlock.purchaseTitle')}</DialogTitle>
+            <DialogDescription>{t('unlock.purchaseDescription')}</DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
-            {/* Order Summary */}
             <div className="space-y-3 rounded-xl bg-secondary p-4">
               <div className="flex items-center justify-between">
-                <span className="font-medium">Extended Report</span>
+                <span className="font-medium">{t('unlock.extendedReport')}</span>
                 <span className="font-semibold">$29.00</span>
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>For: {results?.companyInfo.companyName}</span>
+                <span>
+                  {t('extendedUpsell.orderFor')} {results?.companyInfo.companyName}
+                </span>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="font-semibold">Total</span>
+                <span className="font-semibold">{t('unlock.total')}</span>
                 <span className="text-lg font-bold text-primary">$29.00</span>
               </div>
             </div>
 
-            {/* Demo Notice */}
             <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
               <p className="text-center text-sm text-muted-foreground">
-                <strong className="text-foreground">Demo Mode:</strong> This is a prototype. Click below to simulate a successful purchase and view the extended report.
+                <strong className="text-foreground">{t('unlock.demoMode')}</strong> {t('extendedUpsell.demoBody')}
               </p>
             </div>
 
-            {/* Purchase Button */}
-            <Button 
+            <Button
               className="h-12 w-full rounded-xl bg-primary font-[family-name:var(--font-syne)] text-base font-bold text-primary-foreground hover:bg-primary/90"
               onClick={handlePurchase}
               disabled={isProcessing}
@@ -207,19 +154,17 @@ export function ExtendedReportUpsell() {
               {isProcessing ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Processing...
+                  {t('unlock.processing')}
                 </>
               ) : (
                 <>
-                  Complete Purchase
+                  {t('unlock.completePurchase')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
 
-            <p className="text-center text-xs text-muted-foreground">
-              By purchasing, you agree to our Terms of Service and Privacy Policy
-            </p>
+            <p className="text-center text-xs text-muted-foreground">{t('extendedUpsell.legalFooter')}</p>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,3 +1,8 @@
+import assessmentMessagesEn from "./assessment-i18n.en.json"
+import assessmentMessagesUk from "./assessment-i18n.uk.json"
+import landingMessagesEn from "./landing-i18n.en.json"
+import landingMessagesUk from "./landing-i18n.uk.json"
+
 export type Locale = "en" | "uk"
 
 export const LOCALE_COOKIE_NAME = "site_locale"
@@ -97,6 +102,26 @@ export const MESSAGES = {
     "auth.signupSuccess.portalName": "AI Readiness Portal",
     "auth.signupSuccess.backToSignIn": "Back to Sign In",
     "auth.signupSuccess.missingEmail": "Didn't receive the email? Check your spam folder or try signing up again.",
+    "landing.footer.tagline": "Connecting businesses with vetted Ukrainian RPA experts",
+    "landing.footer.privacy": "Privacy",
+    "landing.footer.terms": "Terms",
+    "landing.footer.contact": "Contact",
+    "nav.myPortal": "My Portal",
+    "nav.signIn": "Sign In",
+    "nav.getStarted": "Get Started",
+    "nav.signUpShort": "Sign up",
+    "nav.applyNow": "Apply Now",
+    "auth.login.welcomeBack": "Welcome Back",
+    "auth.login.subtitle": "Sign in to access your AI Readiness Portal",
+    "auth.login.email": "Email",
+    "auth.login.emailPlaceholder": "you@company.com",
+    "auth.login.password": "Password",
+    "auth.login.passwordPlaceholder": "Enter your password",
+    "auth.login.signingIn": "Signing in...",
+    "auth.login.submit": "Sign In",
+    "auth.login.noAccount": "Don't have an account?",
+    "auth.login.signUpLink": "Sign up",
+    "auth.login.takeAssessment": "Take the free assessment",
     "dashboard.welcomeBack": "Welcome back,",
     "dashboard.overviewSubtitle": "Here's an overview of your AI readiness journey",
     "dashboard.newAssessment": "New Assessment",
@@ -223,6 +248,8 @@ export const MESSAGES = {
     "assessmentDetail.readinessDescription.developing": "Your organization is building AI capabilities. Continue investing in infrastructure, skills, and pilot projects to advance your AI maturity.",
     "assessmentDetail.readinessDescription.emerging": "Your organization is beginning its AI journey. Focus on building foundational capabilities, data infrastructure, and developing AI literacy.",
     "assessmentDetail.readinessDescription.default": "Assessment complete. Review your dimension scores for detailed insights.",
+    ...assessmentMessagesEn,
+    ...landingMessagesEn,
   },
   uk: {
     "portal.title": "AI Readiness Portal",
@@ -318,6 +345,26 @@ export const MESSAGES = {
     "auth.signupSuccess.portalName": "AI Readiness Portal",
     "auth.signupSuccess.backToSignIn": "Повернутися до входу",
     "auth.signupSuccess.missingEmail": "Не отримали лист? Перевірте спам або спробуйте зареєструватися ще раз.",
+    "landing.footer.tagline": "З'єднуємо бізнеси з перевіреними українськими RPA-експертами",
+    "landing.footer.privacy": "Приватність",
+    "landing.footer.terms": "Умови",
+    "landing.footer.contact": "Контакти",
+    "nav.myPortal": "Мій портал",
+    "nav.signIn": "Увійти",
+    "nav.getStarted": "Почати",
+    "nav.signUpShort": "Реєстрація",
+    "nav.applyNow": "Подати заявку",
+    "auth.login.welcomeBack": "З поверненням",
+    "auth.login.subtitle": "Увійдіть, щоб отримати доступ до AI Readiness Portal",
+    "auth.login.email": "Email",
+    "auth.login.emailPlaceholder": "you@company.com",
+    "auth.login.password": "Пароль",
+    "auth.login.passwordPlaceholder": "Введіть ваш пароль",
+    "auth.login.signingIn": "Вхід...",
+    "auth.login.submit": "Увійти",
+    "auth.login.noAccount": "Немає акаунта?",
+    "auth.login.signUpLink": "Зареєструватися",
+    "auth.login.takeAssessment": "Пройти безкоштовне оцінювання",
     "dashboard.welcomeBack": "З поверненням,",
     "dashboard.overviewSubtitle": "Ось огляд вашого шляху AI readiness",
     "dashboard.newAssessment": "Нове оцінювання",
@@ -444,6 +491,8 @@ export const MESSAGES = {
     "assessmentDetail.readinessDescription.developing": "Ваша організація формує AI-спроможності. Продовжуйте інвестувати в інфраструктуру, навички та пілотні проєкти для зростання AI-зрілості.",
     "assessmentDetail.readinessDescription.emerging": "Ваша організація лише починає AI-шлях. Сфокусуйтеся на базових спроможностях, даних та AI-грамотності.",
     "assessmentDetail.readinessDescription.default": "Оцінювання завершено. Перегляньте бали вимірів для детальних інсайтів.",
+    ...assessmentMessagesUk,
+    ...landingMessagesUk,
   },
 } as const
 
@@ -455,8 +504,4 @@ export function isLocale(value: string | null | undefined): value is Locale {
 
 export function t(locale: Locale, key: TranslationKey): string {
   return MESSAGES[locale][key] ?? MESSAGES.en[key]
-}
-
-export function tr(locale: Locale, en: string, uk: string): string {
-  return locale === "uk" ? uk : en
 }

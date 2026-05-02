@@ -3,16 +3,19 @@
 import { useEffect, useState } from 'react'
 import { Brain, Zap, BarChart3, FileSearch, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/components/language-provider'
+import type { TranslationKey } from '@/lib/i18n'
 
 const ANALYSIS_STEPS = [
-  { icon: FileSearch, label: 'Analyzing company profile', duration: 600 },
-  { icon: Brain, label: 'Processing assessment responses', duration: 600 },
-  { icon: BarChart3, label: 'Calculating automation potential', duration: 600 },
-  { icon: Zap, label: 'Identifying optimization opportunities', duration: 600 },
-  { icon: Target, label: 'Matching with Ukrainian RPA experts', duration: 600 },
+  { icon: FileSearch, labelKey: 'analyzing.step0' as const },
+  { icon: Brain, labelKey: 'analyzing.step1' as const },
+  { icon: BarChart3, labelKey: 'analyzing.step2' as const },
+  { icon: Zap, labelKey: 'analyzing.step3' as const },
+  { icon: Target, labelKey: 'analyzing.step4' as const },
 ]
 
 export function AnalyzingScreen() {
+  const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
 
@@ -49,10 +52,10 @@ export function AnalyzingScreen() {
           </div>
 
           <h2 className="mb-2 font-[family-name:var(--font-syne)] text-2xl font-bold text-foreground">
-            Analyzing Your Business
+            {t('analyzing.title')}
           </h2>
           <p className="mb-8 text-muted-foreground">
-            Our AI is processing your responses to generate personalized insights
+            {t('analyzing.subtitle')}
           </p>
 
           {/* Progress bar */}
@@ -63,7 +66,9 @@ export function AnalyzingScreen() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{progress}% complete</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t('analyzing.progress').replace('{pct}', String(progress))}
+            </p>
           </div>
 
           {/* Analysis steps */}
@@ -75,7 +80,7 @@ export function AnalyzingScreen() {
 
               return (
                 <div
-                  key={step.label}
+                  key={step.labelKey}
                   className={cn(
                     'flex items-center gap-3 rounded-xl border border-transparent p-3 transition-all duration-300',
                     isActive && 'border-primary/30 bg-primary/10',
@@ -100,7 +105,7 @@ export function AnalyzingScreen() {
                       !isActive && !isComplete && 'text-muted-foreground/60'
                     )}
                   >
-                    {step.label}
+                    {t(step.labelKey as TranslationKey)}
                   </span>
                   {isActive && (
                     <div className="ml-auto flex gap-1">

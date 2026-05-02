@@ -10,8 +10,10 @@ import { ExtendedReportUpsell } from './extended-report-upsell'
 import { ExtendedReport } from './extended-report'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useLanguage } from '@/components/language-provider'
 
 export function ResultsPage() {
+  const { locale } = useLanguage()
   const { hasPurchasedExtended, reset } = useAssessmentStore()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const supabase = useMemo(() => createClient(), [])
@@ -53,7 +55,7 @@ export function ResultsPage() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/auth/sign-up">
+              <Link href={`/${locale}/auth/sign-up`}>
                 <Button className="gap-2">
                   <LogIn className="h-4 w-4" />
                   Create Free Account

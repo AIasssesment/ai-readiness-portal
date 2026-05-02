@@ -10,35 +10,25 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
+import { localizedHomePath } from "@/lib/locale-path"
 
-export default function SignUpPage() {
+export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [companyName, setCompanyName] = useState("")
-  const [contactName, setContactName] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
-  const { t } = useLanguage()
+  const { locale, t } = useLanguage()
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        emailRedirectTo:
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-          `${window.location.origin}/auth/callback`,
-        data: {
-          company_name: companyName,
-          contact_name: contactName,
-        },
-      },
     })
 
     if (error) {
@@ -48,6 +38,7 @@ export default function SignUpPage() {
     }
 
     router.push("/portal")
+    router.refresh()
   }
 
   return (
@@ -59,12 +50,12 @@ export default function SignUpPage() {
               <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">{t("auth.signup.title")}</CardTitle>
+          <CardTitle className="text-2xl">{t("auth.login.welcomeBack")}</CardTitle>
           <CardDescription>
-            {t("auth.signup.subtitle")}
+            {t("auth.login.subtitle")}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSignUp}>
+        <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
@@ -72,48 +63,25 @@ export default function SignUpPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="contactName">{t("auth.signup.yourName")}</Label>
-              <Input
-                id="contactName"
-                type="text"
-                placeholder={t("auth.signup.yourNamePlaceholder")}
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="companyName">{t("auth.signup.companyName")}</Label>
-              <Input
-                id="companyName"
-                type="text"
-                placeholder={t("auth.signup.companyNamePlaceholder")}
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">{t("auth.signup.workEmail")}</Label>
+              <Label htmlFor="email">{t("auth.login.email")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@company.com"
+                placeholder={t("auth.login.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t("auth.signup.password")}</Label>
+              <Label htmlFor="password">{t("auth.login.password")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder={t("auth.signup.passwordPlaceholder")}
+                placeholder={t("auth.login.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
               />
             </div>
           </CardContent>
@@ -122,16 +90,21 @@ export default function SignUpPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("auth.signup.creating")}
+                  {t("auth.login.signingIn")}
                 </>
               ) : (
-                t("auth.signup.createAccount")
+                t("auth.login.submit")
               )}
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              {t("auth.signup.haveAccount")}{" "}
-              <Link href="/auth/login" className="text-primary hover:underline">
-                {t("auth.signup.signIn")}
+              {t("auth.login.noAccount")}{" "}
+              <Link href={`/${locale}/auth/sign-up`} className="text-primary hover:underline">
+                {t("auth.login.signUpLink")}
+              </Link>
+            </p>
+            <p className="text-sm text-muted-foreground text-center">
+              <Link href={localizedHomePath(locale)} className="text-primary hover:underline">
+                {t("auth.login.takeAssessment")}
               </Link>
             </p>
           </CardFooter>

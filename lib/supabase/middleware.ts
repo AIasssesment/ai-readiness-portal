@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from "jose"
+import { LOCALE_COOKIE_NAME } from "@/lib/i18n"
 
 const SESSION_COOKIE = "app_session"
+
+function loginPath(request: NextRequest): string {
+  const locale = request.cookies.get(LOCALE_COOKIE_NAME)?.value === "uk" ? "uk" : "en"
+  return `/${locale}/auth/login`
+}
 
 function getSecret() {
   const secret = process.env.AUTH_SECRET
@@ -30,7 +36,7 @@ export async function updateSession(request: NextRequest) {
     !user
   ) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
+    url.pathname = loginPath(request)
     return NextResponse.redirect(url)
   }
 

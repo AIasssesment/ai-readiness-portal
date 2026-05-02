@@ -10,25 +10,35 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
-import { tr } from "@/lib/i18n"
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [contactName, setContactName] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
-  const { locale } = useLanguage()
+  const { t, locale } = useLanguage()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo:
+          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+          `${window.location.origin}/auth/callback`,
+        data: {
+          company_name: companyName,
+          contact_name: contactName,
+        },
+      },
     })
 
     if (error) {
@@ -38,7 +48,6 @@ export default function LoginPage() {
     }
 
     router.push("/portal")
-    router.refresh()
   }
 
   return (
@@ -50,12 +59,12 @@ export default function LoginPage() {
               <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">{tr(locale, "Welcome Back", "З поверненням")}</CardTitle>
+          <CardTitle className="text-2xl">{t("auth.signup.title")}</CardTitle>
           <CardDescription>
-            {tr(locale, "Sign in to access your AI Readiness Portal", "Увійдіть, щоб отримати доступ до AI Readiness Portal")}
+            {t("auth.signup.subtitle")}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignUp}>
           <CardContent className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
@@ -63,7 +72,29 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">{tr(locale, "Email", "Email")}</Label>
+              <Label htmlFor="contactName">{t("auth.signup.yourName")}</Label>
+              <Input
+                id="contactName"
+                type="text"
+                placeholder={t("auth.signup.yourNamePlaceholder")}
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="companyName">{t("auth.signup.companyName")}</Label>
+              <Input
+                id="companyName"
+                type="text"
+                placeholder={t("auth.signup.companyNamePlaceholder")}
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">{t("auth.signup.workEmail")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -74,14 +105,15 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{tr(locale, "Password", "Пароль")}</Label>
+              <Label htmlFor="password">{t("auth.signup.password")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder={tr(locale, "Enter your password", "Введіть ваш пароль")}
+                placeholder={t("auth.signup.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
           </CardContent>
@@ -90,21 +122,16 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {tr(locale, "Signing in...", "Вхід...")}
+                  {t("auth.signup.creating")}
                 </>
               ) : (
-                tr(locale, "Sign In", "Увійти")
+                t("auth.signup.createAccount")
               )}
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              {tr(locale, "Don't have an account?", "Немає акаунта?")}{" "}
-              <Link href="/auth/sign-up" className="text-primary hover:underline">
-                {tr(locale, "Sign up", "Зареєструватися")}
-              </Link>
-            </p>
-            <p className="text-sm text-muted-foreground text-center">
-              <Link href="/" className="text-primary hover:underline">
-                {tr(locale, "Take the free assessment", "Пройти безкоштовне оцінювання")}
+              {t("auth.signup.haveAccount")}{" "}
+              <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
+                {t("auth.signup.signIn")}
               </Link>
             </p>
           </CardFooter>

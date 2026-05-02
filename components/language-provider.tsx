@@ -27,6 +27,10 @@ export function LanguageProvider({
   }
 
   useEffect(() => {
+    setLocaleState(initialLocale)
+  }, [initialLocale])
+
+  useEffect(() => {
     document.documentElement.lang = locale
   }, [locale])
 

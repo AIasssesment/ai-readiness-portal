@@ -1,12 +1,17 @@
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Brain, Mail } from "lucide-react"
 import { t } from "@/lib/i18n"
-import { getServerLocale } from "@/lib/i18n-server"
+import { isPublicLocale } from "@/lib/locale-path"
 
-export default async function SignUpSuccessPage() {
-  const locale = await getServerLocale()
+type Props = { params: Promise<{ locale: string }> }
+
+export default async function SignUpSuccessPage({ params }: Props) {
+  const { locale: raw } = await params
+  if (!isPublicLocale(raw)) notFound()
+  const locale = raw
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -35,7 +40,7 @@ export default async function SignUpSuccessPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button asChild variant="outline" className="w-full">
-            <Link href="/auth/login">{t(locale, "auth.signupSuccess.backToSignIn")}</Link>
+            <Link href={`/${locale}/auth/login`}>{t(locale, "auth.signupSuccess.backToSignIn")}</Link>
           </Button>
           <p className="text-xs text-muted-foreground">
             {t(locale, "auth.signupSuccess.missingEmail")}

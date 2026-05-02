@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { PortalNav } from "@/components/portal/portal-nav"
 import { MobilePortalNav } from "@/components/portal/mobile-portal-nav"
+import { LanguageProvider } from "@/components/language-provider"
+import { getServerLocale } from "@/lib/i18n-server"
 import { sql } from "@/lib/db"
 
 type Client = {
@@ -21,11 +23,12 @@ export default async function PortalLayout({
 }: {
   children: React.ReactNode
 }) {
+  const locale = await getServerLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect(`/${locale}/auth/login`)
   }
 
   // Get client info
@@ -56,6 +59,7 @@ export default async function PortalLayout({
   }))
 
   return (
+    <LanguageProvider initialLocale={locale}>
     <div className="min-h-screen bg-muted/30 md:flex md:h-screen md:overflow-hidden">
       <div className="hidden h-screen w-[280px] shrink-0 md:block">
         <PortalNav user={user} client={typedClient} recentChats={recentChatsForNav} />
@@ -72,5 +76,6 @@ export default async function PortalLayout({
         </main>
       </div>
     </div>
+    </LanguageProvider>
   )
 }
