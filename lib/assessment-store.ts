@@ -6,7 +6,7 @@ import { ASSESSMENT_QUESTIONS, ADVICE_MAP } from './assessment-data'
 
 interface AssessmentStore {
   // Form state
-  step: 'info' | 'questions' | 'analyzing' | 'results'
+  step: 'landing' | 'info' | 'questions' | 'analyzing' | 'results'
   currentQuestionIndex: number
   companyInfo: CompanyInfo | null
   answers: AssessmentAnswer[]
@@ -20,7 +20,7 @@ interface AssessmentStore {
   nextQuestion: () => void
   prevQuestion: () => void
   calculateResults: () => void
-  setStep: (step: 'info' | 'questions' | 'analyzing' | 'results') => void
+  setStep: (step: 'landing' | 'info' | 'questions' | 'analyzing' | 'results') => void
   purchaseExtendedReport: () => void
   reset: () => void
 }
@@ -393,7 +393,7 @@ function generateExtendedReport(results: AssessmentResults): ExtendedReportData 
 }
 
 export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
-  step: 'info',
+  step: 'landing',
   currentQuestionIndex: 0,
   companyInfo: null,
   answers: [],
@@ -482,7 +482,7 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
   
   reset: () => {
     set({
-      step: 'info',
+      step: 'landing',
       currentQuestionIndex: 0,
       companyInfo: null,
       answers: [],
