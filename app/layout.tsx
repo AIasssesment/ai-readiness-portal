@@ -15,7 +15,7 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
-  title: 'RPA Community | Free RPA Readiness Assessment',
+  title: 'RPA Community  | Free RPA Readiness Assessment',
   description: 'Discover your RPA readiness in 3 minutes. Get matched with Ukrainian RPA experts and unlock automation opportunities.',
   generator: 'v0.app',
   icons: {
