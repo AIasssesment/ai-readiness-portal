@@ -88,7 +88,7 @@ export default function HomePage() {
               {t('landing.footer.tagline')}
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <a href="#" className="transition-colors hover:text-foreground">
+              <a href="#" className="transition-colors hover:text-foreground"> 
                 {t('landing.footer.privacy')}
               </a>
               <a href="#" className="transition-colors hover:text-foreground">
