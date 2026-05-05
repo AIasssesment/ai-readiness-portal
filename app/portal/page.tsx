@@ -115,7 +115,7 @@ export default async function PortalDashboard() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {t(locale, "dashboard.welcomeBack")} {typedClient?.contact_name || typedClient?.company_name}
+            {t(locale, "dashboard.welcomeBack" )} {typedClient?.contact_name || typedClient?.company_name}
           </h1>
           <p className="text-muted-foreground">
             {t(locale, "dashboard.overviewSubtitle")}
