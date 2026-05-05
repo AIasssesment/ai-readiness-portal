@@ -108,7 +108,7 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
     try {
       const response = await fetch("/api/chat/conversations", { method: "POST" })
       if (response.ok) {
-        const payload = (await response.json()) as { id?: string }
+        const payload = (await response.json()) as { id?: string } 
         if (payload.id) {
           router.push(`/portal/chat?conversationId=${payload.id}`)
           onNavigate?.()
