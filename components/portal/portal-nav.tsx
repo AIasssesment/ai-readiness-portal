@@ -80,6 +80,7 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isCreatingChat, setIsCreatingChat] = useState(false)
   const [searchDialogOpen, setSearchDialogOpen] = useState(false)
   const [chatSearch, setChatSearch] = useState("")
   const { t } = useLanguage()
@@ -103,13 +104,28 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
   }
 
   const handleCreateChat = async () => {
-    const response = await fetch("/api/chat/conversations", { method: "POST" })
-    if (!response.ok) return
-    const payload = (await response.json()) as { id?: string }
-    if (!payload.id) return
-    router.push(`/portal/chat?conversationId=${payload.id}`)
-    onNavigate?.()
-    router.refresh()
+    setIsCreatingChat(true)
+    try {
+      const response = await fetch("/api/chat/conversations", { method: "POST" })
+      if (response.ok) {
+        const payload = (await response.json()) as { id?: string }
+        if (payload.id) {
+          router.push(`/portal/chat?conversationId=${payload.id}`)
+          onNavigate?.()
+          router.refresh()
+          return
+        }
+      }
+
+      // Fallback: open chat page even if conversation creation endpoint fails.
+      router.push("/portal/chat")
+      onNavigate?.()
+    } catch {
+      router.push("/portal/chat")
+      onNavigate?.()
+    } finally {
+      setIsCreatingChat(false)
+    }
   }
 
   const openRenameDialog = (chatId: string, currentTitle: string) => {
@@ -196,6 +212,7 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
           size="sm"
           className="mt-3 mb-2 justify-start"
           onClick={handleCreateChat}
+          disabled={isCreatingChat}
         >
           <Plus className="mr-2 h-4 w-4" />
           {t("portal.createChat")}
