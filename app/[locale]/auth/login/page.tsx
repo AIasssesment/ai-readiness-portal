@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 import { localizedHomePath } from "@/lib/locale-path"
+import { toast } from "sonner"
 
 function GoogleIcon() {
   return (
@@ -32,10 +33,26 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const hasShownResetToast = useRef(false)
   const supabase = createClient()
   const { locale, t } = useLanguage()
   const googleLabel = locale === "uk" ? "Увійти через Google" : "Continue with Google"
   const orLabel = locale === "uk" ? "або" : "or"
+  const resetEmailSent = searchParams.get("reset_email") === "sent"
+
+  useEffect(() => {
+    if (!resetEmailSent || hasShownResetToast.current) return
+
+    hasShownResetToast.current = true
+    toast.success(
+      locale === "uk"
+        ? "Лист для скидання пароля успішно надіслано."
+        : "Password reset email sent successfully.",
+    )
+    router.replace(pathname)
+  }, [locale, pathname, resetEmailSent, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,6 +116,11 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <div className="pt-1 text-right">
+                <Link href={`/${locale}/auth/forgot-password`} className="text-xs text-primary hover:underline">
+                  {locale === "uk" ? "Забули пароль?" : "Forgot password?"}
+                </Link>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3 pt-2">
