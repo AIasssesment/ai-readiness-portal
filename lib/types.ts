@@ -21,6 +21,7 @@ export interface AssessmentQuestion {
 export interface AssessmentAnswer {
   questionId: string
   value: number
+  optionIndex?: number
 }
 
 export interface DimensionScores {
