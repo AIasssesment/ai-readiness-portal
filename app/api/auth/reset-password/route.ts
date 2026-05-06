@@ -2,6 +2,7 @@ import { createHash } from "node:crypto"
 import { NextResponse } from "next/server"
 import { hashPassword } from "@/lib/auth/password"
 import { sql } from "@/lib/db"
+import { apiErrors } from "@/lib/http/api-errors"
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex")
@@ -14,10 +15,10 @@ export async function POST(request: Request) {
     const password = String(body.password ?? "")
 
     if (!token || !password) {
-      return NextResponse.json({ error: "Token and password are required" }, { status: 400 })
+      return apiErrors.badRequest("Token and password are required")
     }
     if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
+      return apiErrors.badRequest("Password must be at least 6 characters")
     }
 
     const tokenHash = hashToken(token)
@@ -51,12 +52,12 @@ export async function POST(request: Request) {
     })
 
     if ("error" in result) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
+      return apiErrors.badRequest(result.error)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("reset-password error", error)
-    return NextResponse.json({ error: "Failed to reset password" }, { status: 500 })
+    return apiErrors.internal("Failed to reset password")
   }
 }

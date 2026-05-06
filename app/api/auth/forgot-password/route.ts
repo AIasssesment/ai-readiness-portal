@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { sql } from "@/lib/db"
+import { apiErrors } from "@/lib/http/api-errors"
 
 const RESET_TOKEN_TTL_MINUTES = 60
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const locale = body.locale === "uk" ? "uk" : "en"
 
     if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 })
+      return apiErrors.badRequest("Email is required")
     }
 
     const users = await sql<Array<{ id: string }>>`
@@ -111,6 +112,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("forgot-password error", error)
-    return NextResponse.json({ error: "Failed to process password reset" }, { status: 500 })
+    return apiErrors.internal("Failed to process password reset")
   }
 }

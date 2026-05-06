@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
+import { apiErrors } from "@/lib/http/api-errors"
 
 async function getClientIdByUser(userId: string) {
   const rows = await sql<Array<{ id: string }>>`
@@ -19,10 +20,10 @@ export async function DELETE(
   try {
     const { id } = await params
     const user = await getSessionUser()
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!user) return apiErrors.unauthorized()
 
     const clientId = await getClientIdByUser(user.id)
-    if (!clientId) return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
+    if (!clientId) return apiErrors.notFound("Client profile not found")
 
     await sql`
       delete from workforce_roles
@@ -33,6 +34,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("workforce role DELETE error", error)
-    return NextResponse.json({ error: "Failed to delete workforce role" }, { status: 500 })
+    return apiErrors.internal("Failed to delete workforce role")
   }
 }

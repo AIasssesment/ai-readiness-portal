@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
+import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
 
 export default function ForgotPasswordPage() {
   const { locale } = useLanguage()
@@ -36,9 +37,9 @@ export default function ForgotPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, locale }),
       })
-      const payload = (await response.json()) as { error?: string }
+      const payload = (await response.json()) as unknown
       if (!response.ok) {
-        setError(payload.error || (locale === "uk" ? "Не вдалося надіслати запит" : "Failed to process request"))
+        setError(parseApiErrorMessage(payload) || (locale === "uk" ? "Не вдалося надіслати запит" : "Failed to process request"))
         setIsLoading(false)
         return
       }

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { apiErrors } from "@/lib/http/api-errors"
 
 export async function POST(request: Request) {
   try {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
         if (clientError) {
           console.error("Error creating client:", clientError)
-          return NextResponse.json({ error: "Failed to create client" }, { status: 500 })
+          return apiErrors.internal("Failed to create client")
         }
         client = newClient
       }
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
 
       if (assessmentError) {
         console.error("Error saving assessment:", assessmentError)
-        return NextResponse.json({ error: "Failed to save assessment" }, { status: 500 })
+        return apiErrors.internal("Failed to save assessment")
       }
 
       // Save opportunities if provided
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error("Assessment API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return apiErrors.internal("Internal server error")
   }
 }
 
@@ -142,7 +143,7 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return apiErrors.unauthorized()
     }
 
     // Get client
@@ -165,13 +166,13 @@ export async function GET() {
 
     if (error) {
       console.error("Error fetching assessments:", error)
-      return NextResponse.json({ error: "Failed to fetch assessments" }, { status: 500 })
+      return apiErrors.internal("Failed to fetch assessments")
     }
 
     return NextResponse.json({ assessments })
 
   } catch (error) {
     console.error("Assessment API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return apiErrors.internal("Internal server error")
   }
 }

@@ -4,6 +4,7 @@ import { z } from "zod"
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
+import { apiErrors } from "@/lib/http/api-errors"
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -54,7 +55,7 @@ export async function POST() {
   try {
     const user = await getSessionUser()
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return apiErrors.unauthorized()
     }
 
     const clients = await sql<Array<{ id: string; company_name: string; industry: string | null; company_size: string | null }>>`
@@ -65,7 +66,7 @@ export async function POST() {
     `
     const client = clients[0]
     if (!client) {
-      return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
+      return apiErrors.notFound("Client profile not found")
     }
 
     const latestAssessments = await sql<Array<{ id: string; overall_score: number; readiness_level: string; dimension_scores: Record<string, number> | null }>>`
@@ -77,7 +78,7 @@ export async function POST() {
     `
     const latestAssessment = latestAssessments[0]
     if (!latestAssessment) {
-      return NextResponse.json({ error: "Assessment required before generating job risk" }, { status: 400 })
+      return apiErrors.badRequest("Assessment required before generating job risk")
     }
 
     const workforceRoles = await sql<WorkforceRole[]>`
@@ -89,11 +90,8 @@ export async function POST() {
     `
 
     if (!workforceRoles.length) {
-      return NextResponse.json(
-        {
-          error: "Workforce roles are required. Add job titles and employee counts before generating job risk.",
-        },
-        { status: 400 },
+      return apiErrors.badRequest(
+        "Workforce roles are required. Add job titles and employee counts before generating job risk.",
       )
     }
 
@@ -200,6 +198,6 @@ Mention the estimated at-risk headcount (${totalAtRiskHeadcount}) in the executi
     })
   } catch (error) {
     console.error("job risk generation error", error)
-    return NextResponse.json({ error: "Failed to generate job risk report" }, { status: 500 })
+    return apiErrors.internal("Failed to generate job risk report")
   }
 }

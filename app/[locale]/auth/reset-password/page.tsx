@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, CheckCircle2, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
+import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
 
 export default function ResetPasswordPage() {
   const { locale } = useLanguage()
@@ -51,9 +52,9 @@ export default function ResetPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
       })
-      const payload = (await response.json()) as { error?: string }
+      const payload = (await response.json()) as unknown
       if (!response.ok) {
-        setError(payload.error || (locale === "uk" ? "Не вдалося змінити пароль." : "Failed to reset password."))
+        setError(parseApiErrorMessage(payload) || (locale === "uk" ? "Не вдалося змінити пароль." : "Failed to reset password."))
         return
       }
       setIsSuccess(true)

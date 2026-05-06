@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
+import { apiErrors } from "@/lib/http/api-errors"
 
 function normalizeRole(value: string) {
   return value
@@ -23,10 +24,10 @@ async function getClientIdByUser(userId: string) {
 export async function GET() {
   try {
     const user = await getSessionUser()
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!user) return apiErrors.unauthorized()
 
     const clientId = await getClientIdByUser(user.id)
-    if (!clientId) return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
+    if (!clientId) return apiErrors.notFound("Client profile not found")
 
     const roles = await sql<Array<{
       id: string
@@ -44,17 +45,17 @@ export async function GET() {
     return NextResponse.json({ roles })
   } catch (error) {
     console.error("workforce roles GET error", error)
-    return NextResponse.json({ error: "Failed to load workforce roles" }, { status: 500 })
+    return apiErrors.internal("Failed to load workforce roles")
   }
 }
 
 export async function POST(request: Request) {
   try {
     const user = await getSessionUser()
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!user) return apiErrors.unauthorized()
 
     const clientId = await getClientIdByUser(user.id)
-    if (!clientId) return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
+    if (!clientId) return apiErrors.notFound("Client profile not found")
 
     const body = (await request.json()) as {
       role_title?: string
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     const roleTitle = body.role_title?.trim()
     const employeeCount = Number(body.employee_count ?? 0)
     if (!roleTitle || Number.isNaN(employeeCount) || employeeCount < 0) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+      return apiErrors.badRequest("Invalid payload")
     }
 
     const normalized = normalizeRole(roleTitle)
@@ -84,6 +85,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ id: rows[0]?.id, ok: true })
   } catch (error) {
     console.error("workforce roles POST error", error)
-    return NextResponse.json({ error: "Failed to save workforce role" }, { status: 500 })
+    return apiErrors.internal("Failed to save workforce role")
   }
 }

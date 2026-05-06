@@ -1,5 +1,6 @@
 import { randomBytes, createHash } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
+import { apiErrors } from "@/lib/http/api-errors"
 
 const OAUTH_STATE_COOKIE = "oauth_google_state"
 const OAUTH_VERIFIER_COOKIE = "oauth_google_verifier"
@@ -31,7 +32,7 @@ function safeNextPath(value: string | null) {
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   if (!clientId) {
-    return NextResponse.json({ error: "GOOGLE_CLIENT_ID is not set" }, { status: 500 })
+    return apiErrors.internal("GOOGLE_CLIENT_ID is not set")
   }
 
   const url = new URL(request.url)
