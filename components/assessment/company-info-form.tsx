@@ -71,7 +71,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         {t('companyForm.subtitle')}
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium text-muted-foreground">
@@ -79,6 +79,8 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             </label>
             <Input
               id="firstName"
+              name="given-name"
+              autoComplete="given-name"
               placeholder={t('companyForm.phFirstName')}
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -91,6 +93,8 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             </label>
             <Input
               id="lastName"
+              name="family-name"
+              autoComplete="family-name"
               placeholder={t('companyForm.phLastName')}
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -105,7 +109,9 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           </label>
           <Input
             id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             placeholder={t('companyForm.phEmail')}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -119,7 +125,10 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           </label>
           <Input
             id="companyUrl"
+            name="url"
             type="url"
+            autoComplete="url"
+            inputMode="url"
             placeholder="https://company.com"
             value={formData.companyName}
             onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
