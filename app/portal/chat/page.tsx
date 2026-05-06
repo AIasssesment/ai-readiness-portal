@@ -26,7 +26,7 @@ export default function ChatPage() {
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const [historyKey, setHistoryKey] = useState(0)
-  const { locale, t } = useLanguage()
+  const { t } = useLanguage()
 
   useEffect(() => {
     let cancelled = false
@@ -74,7 +74,6 @@ export default function ChatPage() {
         key={`${conversationId ?? "new"}-${historyKey}`}
         conversationId={conversationId}
         initialMessages={initialMessages}
-        locale={locale}
         t={t}
       />
     </>
@@ -174,12 +173,10 @@ function MobileChatSearchOverlay({
 function ChatSession({
   conversationId,
   initialMessages,
-  locale,
   t,
 }: {
   conversationId: string | null
   initialMessages: UIMessage[]
-  locale: "en" | "uk"
   t: (key: import("@/lib/i18n").TranslationKey) => string
 }) {
   const bottomRef = useRef<HTMLDivElement | null>(null)

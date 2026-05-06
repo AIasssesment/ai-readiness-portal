@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db"
 
-type ContextData = {
+export type ContextData = {
   companyName: string
   industry: string | null
   companySize: string | null

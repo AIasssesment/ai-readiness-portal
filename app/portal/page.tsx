@@ -10,7 +10,6 @@ import {
   Clock,
   ArrowRight,
   CheckCircle2,
-  AlertCircle,
   Zap
 } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
@@ -82,7 +81,7 @@ export default async function PortalDashboard() {
   const { data: assessments } = await supabase
     .from("assessments")
     .select()
-    .eq("client_id", (client as any)?.id)
+    .eq("client_id", (client as { id?: string } | null)?.id)
     .order("created_at", { ascending: false })
     .limit(5)
 
@@ -90,7 +89,7 @@ export default async function PortalDashboard() {
   const { data: opportunities } = await supabase
     .from("opportunities")
     .select()
-    .eq("client_id", (client as any)?.id)
+    .eq("client_id", (client as { id?: string } | null)?.id)
     .order("priority", { ascending: true })
 
   // Get latest assessment

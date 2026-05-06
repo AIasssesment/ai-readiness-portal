@@ -93,8 +93,6 @@ export default async function JobRiskPage({
     where client_id = ${client.id}
     order by employee_count desc
   `
-  const workforceTotal = workforceRows.reduce((sum, row) => sum + row.employee_count, 0)
-
   const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null; generated_at: string }>>`
     select id, overall_risk_score, executive_summary, generated_at
     from job_risk_reports

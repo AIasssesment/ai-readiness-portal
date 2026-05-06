@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
@@ -26,6 +26,15 @@ function getReadinessLabel(level: string, locale: "en" | "uk") {
     case "emerging": return t(locale, "assessments.readiness.emerging")
     default: return level
   }
+}
+
+type AssessmentRow = {
+  id: string
+  status: string
+  created_at: string
+  readiness_level: string
+  overall_score: number
+  dimension_scores: Record<string, number> | null
 }
 
 function getStatusBadge(status: string, locale: "en" | "uk") {
@@ -80,7 +89,7 @@ export default async function AssessmentsPage() {
 
       {assessments && assessments.length > 0 ? (
         <div className="grid gap-4">
-          {(assessments as Array<Record<string, any>>).map((assessment) => (
+          {(assessments as unknown as AssessmentRow[]).map((assessment) => (
             <Card key={assessment.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
