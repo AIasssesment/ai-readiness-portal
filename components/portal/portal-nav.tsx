@@ -84,6 +84,8 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
   const [searchDialogOpen, setSearchDialogOpen] = useState(false)
   const [chatSearch, setChatSearch] = useState("")
   const { t } = useLanguage()
+  const displayName = client?.contact_name?.trim() || user.email.split("@")[0]
+  const secondaryInfo = client?.company_name || user.email
   const filteredChats = useMemo(() => {
     const query = chatSearch.trim().toLowerCase()
     if (!query) return recentChats
@@ -344,14 +346,14 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
                 <User className="h-4 w-4 text-primary" />
               </div>
               <span className="max-w-40 truncate">
-                {client?.company_name || user.email}
+                {displayName}
               </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <div className="px-2 py-1.5">
-              <p className="text-sm font-medium">{client?.company_name}</p>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
+              <p className="text-sm font-medium">{displayName}</p>
+              <p className="text-xs text-muted-foreground">{secondaryInfo}</p>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

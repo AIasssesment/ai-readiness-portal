@@ -16,6 +16,10 @@ export async function POST(request: Request) {
       opportunities 
     } = body
 
+    const contactName =
+      companyInfo?.website?.trim() ||
+      (companyInfo?.firstName ? `${companyInfo.firstName} ${companyInfo.lastName ?? ""}`.trim() : null)
+
     // If user is logged in, save to their account
     if (user) {
       // Get or create client record
@@ -32,7 +36,7 @@ export async function POST(request: Request) {
           .insert({
             user_id: user.id,
             company_name: companyInfo?.companyName || "Unknown",
-            contact_name: companyInfo?.firstName ? `${companyInfo.firstName} ${companyInfo.lastName}` : null,
+            contact_name: contactName,
             contact_email: companyInfo?.email || user.email,
             industry: companyInfo?.industry || null,
             company_size: companyInfo?.employeeCount || null
@@ -52,7 +56,7 @@ export async function POST(request: Request) {
         .from("clients")
         .update({
           company_name: companyInfo?.companyName || client.company_name,
-          contact_name: companyInfo?.firstName ? `${companyInfo.firstName} ${companyInfo.lastName}` : client.contact_name,
+          contact_name: contactName || client.contact_name,
           industry: companyInfo?.industry || client.industry,
           company_size: companyInfo?.employeeCount || client.company_size
         })

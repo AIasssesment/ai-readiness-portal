@@ -1,6 +1,7 @@
 export interface CompanyInfo {
   firstName: string
   lastName: string
+  website?: string
   companyName: string
   industry?: string
   employeeCount?: string

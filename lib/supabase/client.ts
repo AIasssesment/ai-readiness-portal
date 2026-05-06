@@ -93,9 +93,13 @@ export function createClient() {
       signOut: async () => {
         await fetch("/api/auth/logout", { method: "POST" })
       },
-      signInWithOAuth: async () => ({
-        error: { message: "OAuth is not configured for Neon auth yet." },
-      }),
+      signInWithOAuth: async ({ provider }: { provider: "google" }) => {
+        if (typeof window !== "undefined" && provider === "google") {
+          window.location.href = "/api/auth/google/start?next=/portal"
+          return { error: null }
+        }
+        return { error: { message: "Unsupported OAuth provider" } }
+      },
     },
     from: (tableName: "clients") => new ClientTableQuery(tableName),
   }

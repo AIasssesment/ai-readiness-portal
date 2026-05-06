@@ -114,12 +114,13 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         <div>
-          <label htmlFor="companyName" className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            {t('companyForm.companyName')}
+          <label htmlFor="companyUrl" className="mb-1.5 block text-sm font-medium text-muted-foreground">
+            Company URL
           </label>
           <Input
-            id="companyName"
-            placeholder={t('companyForm.phCompany')}
+            id="companyUrl"
+            type="url"
+            placeholder="https://company.com"
             value={formData.companyName}
             onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
             className="h-12 border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
