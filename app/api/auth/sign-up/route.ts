@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { hashPassword } from "@/lib/auth/password"
 import { createSession } from "@/lib/auth/session"
+import { apiErrors } from "@/lib/http/api-errors"
 
 export async function POST(request: Request) {
   try {
@@ -12,11 +13,11 @@ export async function POST(request: Request) {
     const contactName = String(body.contactName ?? "").trim()
 
     if (!email || !password || !companyName || !contactName) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return apiErrors.badRequest("Missing required fields")
     }
 
     if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
+      return apiErrors.badRequest("Password must be at least 6 characters")
     }
 
     const passwordHash = await hashPassword(password)
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     })
 
     if ("error" in result) {
-      return NextResponse.json({ error: result.error }, { status: 409 })
+      return apiErrors.conflict(result.error)
     }
 
     await createSession({
@@ -59,9 +60,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("sign-up error", error)
-    return NextResponse.json(
-      { error: "Failed to create account. Ensure table user_credentials exists." },
-      { status: 500 },
-    )
+    return apiErrors.internal("Failed to create account. Ensure table user_credentials exists.")
   }
 }

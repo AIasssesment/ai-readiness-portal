@@ -1,6 +1,7 @@
 export interface CompanyInfo {
   firstName: string
   lastName: string
+  website?: string
   companyName: string
   industry?: string
   employeeCount?: string
@@ -21,6 +22,7 @@ export interface AssessmentQuestion {
 export interface AssessmentAnswer {
   questionId: string
   value: number
+  optionIndex?: number
 }
 
 export interface DimensionScores {

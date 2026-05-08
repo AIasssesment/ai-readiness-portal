@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation"
+import { unauthorized } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { PortalNav } from "@/components/portal/portal-nav"
 import { MobilePortalNav } from "@/components/portal/mobile-portal-nav"
@@ -28,7 +28,7 @@ export default async function PortalLayout({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    unauthorized()
   }
 
   // Get client info

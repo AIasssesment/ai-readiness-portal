@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowRight, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,12 +10,14 @@ import { cn } from '@/lib/utils'
 import { useAssessmentStore } from '@/lib/assessment-store'
 import type { CompanyInfo } from '@/lib/types'
 import { useLanguage } from '@/components/language-provider'
+import { toast } from 'sonner'
 
 const neonCtaButtonClass =
   'w-full rounded-xl border-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-4 py-4 font-[family-name:var(--font-syne)] text-base font-bold !whitespace-normal leading-tight text-zinc-950 shadow-[0_0_28px_-4px_rgba(45,212,191,0.55)] transition hover:brightness-105 hover:shadow-[0_0_40px_-2px_rgba(45,212,191,0.7)] sm:text-lg'
 
 export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
-  const { t } = useLanguage()
+  const router = useRouter()
+  const { t, locale } = useLanguage()
   const setCompanyInfo = useAssessmentStore((state) => state.setCompanyInfo)
   const [formData, setFormData] = useState<CompanyInfo>({
     firstName: '',
@@ -25,8 +28,9 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     email: '',
   })
   const [error, setError] = useState<string | null>(null)
+  const [isProvisioning, setIsProvisioning] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.companyName.trim()) {
@@ -40,7 +44,48 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     }
 
     setError(null)
-    setCompanyInfo(formData)
+    setIsProvisioning(true)
+
+    try {
+      const res = await fetch('/api/assessment/provision-account', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          companyName: formData.companyName.trim(),
+          locale,
+        }),
+      })
+
+      const data = (await res.json()) as {
+        ok?: boolean
+        existingUser?: boolean
+        error?: { message?: string }
+      }
+
+      if (!res.ok) {
+        setError(data?.error?.message ?? t('companyForm.provisionFailed'))
+        return
+      }
+
+      if (data.existingUser) {
+        router.push(
+          `/${locale}/auth/login?email=${encodeURIComponent(formData.email.trim())}`,
+        )
+        return
+      }
+
+      toast.success(t('companyForm.accountCreatedToast'))
+      window.dispatchEvent(new Event('portal-auth-changed'))
+      setCompanyInfo(formData)
+    } catch {
+      setError(t('companyForm.provisionFailed'))
+    } finally {
+      setIsProvisioning(false)
+    }
   }
 
   const formCard = (
@@ -71,7 +116,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         {t('companyForm.subtitle')}
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium text-muted-foreground">
@@ -79,6 +124,8 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             </label>
             <Input
               id="firstName"
+              name="given-name"
+              autoComplete="given-name"
               placeholder={t('companyForm.phFirstName')}
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -91,6 +138,8 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             </label>
             <Input
               id="lastName"
+              name="family-name"
+              autoComplete="family-name"
               placeholder={t('companyForm.phLastName')}
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -105,7 +154,9 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           </label>
           <Input
             id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             placeholder={t('companyForm.phEmail')}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -114,12 +165,16 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         <div>
-          <label htmlFor="companyName" className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            {t('companyForm.companyName')}
+          <label htmlFor="companyUrl" className="mb-1.5 block text-sm font-medium text-muted-foreground">
+            Company URL
           </label>
           <Input
-            id="companyName"
-            placeholder={t('companyForm.phCompany')}
+            id="companyUrl"
+            name="url"
+            type="url"
+            autoComplete="url"
+            inputMode="url"
+            placeholder="https://company.com"
             value={formData.companyName}
             onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
             className="h-12 border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
@@ -132,8 +187,14 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
 
-        <Button type="submit" className={cn('mt-2 min-h-14', neonCtaButtonClass)}>
-          <span className="text-center break-words">{t('companyForm.cta')}</span>
+        <Button
+          type="submit"
+          disabled={isProvisioning}
+          className={cn('mt-2 min-h-14', neonCtaButtonClass)}
+        >
+          <span className="text-center break-words">
+            {isProvisioning ? t('companyForm.creatingAccount') : t('companyForm.cta')}
+          </span>
           <ArrowRight className="ml-2 h-5 w-5 shrink-0" />
         </Button>
 
