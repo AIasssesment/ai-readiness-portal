@@ -97,7 +97,7 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyUrl">{t("auth.signup.companyName")}</Label>
+              <Label htmlFor="companyUrl">{t("auth.signup.companyUrl")}</Label>
               <Input
                 id="companyUrl"
                 type="text"

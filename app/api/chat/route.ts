@@ -3,7 +3,9 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
-import { buildChatContext, getChatContext } from "@/lib/chat-context"
+import { getChatContext } from "@/lib/chat-context"
+import { buildSystemPrompt, classifyChatIntent } from "@/lib/chat-prompts"
+import { getServerLocale } from "@/lib/i18n-server"
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -87,15 +89,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
     }
 
-    const context = await getChatContext(clientId)
-    const system = buildChatContext(context)
-
     const latestUserMessage = [...messages].reverse().find((message) => message.role === "user")
     const latestUserText = latestUserMessage?.parts
       ?.filter((part) => part.type === "text")
       .map((part) => ("text" in part ? part.text : ""))
       .join("\n")
       .trim()
+
+    const context = await getChatContext(clientId)
+    const locale = await getServerLocale()
+    const intent = await classifyChatIntent(latestUserText ?? "", locale)
+    const system = buildSystemPrompt(context, intent.type, clientId, locale)
 
     const url = new URL(request.url)
     let conversationId = body.conversationId ?? url.searchParams.get("conversationId") ?? undefined

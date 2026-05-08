@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useSearchParams } from "next/navigation"
 import { getReportRequest, readLatestReportRequestId } from "@/lib/api/payments"
 import type { ReportRequestResponse } from "@/lib/api/types"
+import { t, type Locale, isLocale } from "@/lib/i18n"
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams()
@@ -22,6 +23,12 @@ export default function PaymentSuccessPage() {
 
   const assessmentIdFromQuery = useMemo(() => searchParams.get("assessmentId"), [searchParams])
   const testPaid = useMemo(() => searchParams.get("testPaid") === "1", [searchParams])
+
+  const returnLocaleParam = searchParams.get("returnLocale")
+  const locale = useMemo((): Locale => {
+    if (isLocale(returnLocaleParam)) return returnLocaleParam
+    return "en"
+  }, [returnLocaleParam])
 
   useEffect(() => {
     let cancelled = false
@@ -38,7 +45,7 @@ export default function PaymentSuccessPage() {
       })
       .catch((err) => {
         if (cancelled) return
-        setError(err instanceof Error ? err.message : "Failed to load report status")
+        setError(err instanceof Error ? err.message : t(locale, "payment.success.errorLoad"))
       })
       .finally(() => {
         if (cancelled) return
@@ -48,40 +55,35 @@ export default function PaymentSuccessPage() {
     return () => {
       cancelled = true
     }
-  }, [reportRequestId])
+  }, [reportRequestId, locale])
 
   const effectiveStatus = testPaid ? "ready" : reportRequest?.status
 
-  const headline =
-    effectiveStatus === "ready"
-      ? "Розширений звіт доступний"
-      : effectiveStatus === "pending_manual"
-        ? "Оплату отримано, ручний follow-up до 48 год"
-        : "Оплату успішно отримано"
+  const headline = useMemo(() => {
+    if (effectiveStatus === "ready") return t(locale, "payment.success.headline.ready")
+    if (effectiveStatus === "pending_manual") return t(locale, "payment.success.headline.pendingManual")
+    return t(locale, "payment.success.headline.default")
+  }, [effectiveStatus, locale])
 
-  const subtitle =
-    effectiveStatus === "ready"
-      ? "Ваш розширений звіт уже готовий у порталі."
-      : effectiveStatus === "pending_manual"
-        ? "Команда доопрацює звіт вручну та надішле результат на email."
-        : "Статус запиту оновлюється. Перевірте портал через кілька хвилин."
+  const subtitle = useMemo(() => {
+    if (effectiveStatus === "ready") return t(locale, "payment.success.subtitle.ready")
+    if (effectiveStatus === "pending_manual") return t(locale, "payment.success.subtitle.pendingManual")
+    return t(locale, "payment.success.subtitle.default")
+  }, [effectiveStatus, locale])
 
   const assessmentIdFromRequest =
     (reportRequest as unknown as { assessmentId?: string; assessment_id?: string } | null)?.assessmentId ??
     (reportRequest as unknown as { assessmentId?: string; assessment_id?: string } | null)?.assessment_id ??
     null
   const targetAssessmentId = assessmentIdFromRequest || assessmentIdFromQuery
-  const returnLocaleParam = searchParams.get("returnLocale")
-  const localeSegment =
-    returnLocaleParam === "uk" || returnLocaleParam === "en" ? returnLocaleParam : "en"
 
   const openReportHref = useMemo(() => {
     const params = new URLSearchParams()
     params.set("openResults", "1")
     if (targetAssessmentId) params.set("assessmentId", targetAssessmentId)
     if (testPaid) params.set("testPaid", "1")
-    return `/${localeSegment}?${params.toString()}`
-  }, [localeSegment, targetAssessmentId, testPaid])
+    return `/${locale}?${params.toString()}`
+  }, [locale, targetAssessmentId, testPaid])
 
   const openPaidReport = () => {
     if (testPaid && targetAssessmentId && typeof document !== "undefined") {
@@ -118,16 +120,16 @@ export default function PaymentSuccessPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
-            <div className="text-center text-sm text-muted-foreground">Завантажуємо стан запиту...</div>
+            <div className="text-center text-sm text-muted-foreground">
+              {t(locale, "payment.success.loadingStatus")}
+            </div>
           ) : null}
 
           {effectiveStatus === "pending_manual" ? (
             <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-foreground">
               <p className="flex items-start gap-2">
                 <Clock3 className="mt-0.5 h-4 w-4 text-amber-600" />
-                <span>
-                  Ручна валідація активна. Ми зв&apos;яжемося протягом 48 годин і надішлемо готовий звіт на email.
-                </span>
+                <span>{t(locale, "payment.success.manualNotice")}</span>
               </p>
             </div>
           ) : null}
@@ -140,10 +142,10 @@ export default function PaymentSuccessPage() {
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="button" className="flex-1" onClick={openPaidReport}>
-              Open paid report
+              {t(locale, "payment.success.openReport")}
             </Button>
             <Button asChild variant="outline" className="flex-1">
-              <Link href="/portal/assessments">Assessments</Link>
+              <Link href="/portal/assessments">{t(locale, "payment.success.assessments")}</Link>
             </Button>
           </div>
         </CardContent>

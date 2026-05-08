@@ -1,6 +1,5 @@
 import type { Locale } from "@/lib/i18n"
 
-/** Сегменти URL для публічних сторінок (поділювані посилання). */
 export const PUBLIC_LOCALES = ["en", "uk"] as const satisfies readonly Locale[]
 
 export type PublicLocale = (typeof PUBLIC_LOCALES)[number]

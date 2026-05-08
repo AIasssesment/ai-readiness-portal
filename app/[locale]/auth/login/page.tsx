@@ -39,7 +39,6 @@ export default function LoginPage() {
   const hasShownResetToast = useRef(false)
   const db = createClient()
   const { locale, t } = useLanguage()
-
   const resetEmailSent = searchParams.get("reset_email") === "sent"
 
   const appliedEmailFromQuery = useRef(false)
@@ -149,6 +148,11 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <div className="pt-1 text-right">
+                <Link href={`/${locale}/auth/forgot-password`} className="text-xs text-primary hover:underline">
+                  {t("auth.login.forgotPasswordLink")}
+                </Link>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3 pt-2">

@@ -74,11 +74,7 @@ export default function HomePage() {
         const res = await fetch(`/api/assessments/${assessmentId}`)
         if (!res.ok) {
           handledOpenResultsKey.current = dedupeKey
-          setRehydrateError(
-            locale === 'uk'
-              ? 'Не вдалося завантажити збережене оцінювання. Увійдіть або пройдіть тест знову.'
-              : 'Could not load your saved assessment. Sign in or complete the assessment again.',
-          )
+          setRehydrateError(t('landing.rehydrate.loadFailed'))
           setRehydrating(false)
           return
         }
@@ -110,16 +106,14 @@ export default function HomePage() {
         router.replace(`/${locale}`, { scroll: false })
       } catch {
         handledOpenResultsKey.current = dedupeKey
-        setRehydrateError(
-          locale === 'uk' ? 'Помилка завантаження оцінювання.' : 'Failed to load assessment.',
-        )
+        setRehydrateError(t('landing.rehydrate.genericError'))
       } finally {
         setRehydrating(false)
       }
     }
 
     void run()
-  }, [hydrateFromSavedAssessment, locale, purchaseExtendedReport, router, searchParams, setStep])
+  }, [hydrateFromSavedAssessment, locale, purchaseExtendedReport, router, searchParams, setStep, t])
 
   return (
     <main className="min-h-screen bg-background">
