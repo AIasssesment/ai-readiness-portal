@@ -16,7 +16,7 @@ interface AssessmentStore {
   
   // Actions
   setCompanyInfo: (info: CompanyInfo) => void
-  answerQuestion: (questionId: string, value: number, optionIndex?: number) => void
+  answerQuestion: (questionId: string, value: number) => void
   nextQuestion: () => void
   prevQuestion: () => void
   calculateResults: () => void
@@ -405,16 +405,16 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
     set({ companyInfo: info, step: 'questions' })
   },
   
-  answerQuestion: (questionId, value, optionIndex) => {
+  answerQuestion: (questionId, value) => {
     const { answers } = get()
     const existingIndex = answers.findIndex((a) => a.questionId === questionId)
     
     if (existingIndex >= 0) {
       const newAnswers = [...answers]
-      newAnswers[existingIndex] = { questionId, value, optionIndex }
+      newAnswers[existingIndex] = { questionId, value }
       set({ answers: newAnswers })
     } else {
-      set({ answers: [...answers, { questionId, value, optionIndex }] })
+      set({ answers: [...answers, { questionId, value }] })
     }
   },
   

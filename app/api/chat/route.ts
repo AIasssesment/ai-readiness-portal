@@ -3,9 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
-import { getChatContext } from "@/lib/chat-context"
-import { buildSystemPrompt, classifyChatIntent } from "@/lib/chat-prompts"
-import { apiErrors } from "@/lib/http/api-errors"
+import { buildChatContext, getChatContext } from "@/lib/chat-context"
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -36,12 +34,12 @@ export async function GET(request: Request) {
   try {
     const user = await getSessionUser()
     if (!user) {
-      return apiErrors.unauthorized()
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const clientId = await getClientIdByUser(user.id)
     if (!clientId) {
-      return apiErrors.notFound("Client profile not found")
+      return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
     }
 
     const url = new URL(request.url)
@@ -52,7 +50,7 @@ export async function GET(request: Request) {
 
     const allowed = await hasConversationAccess(conversationId, clientId)
     if (!allowed) {
-      return apiErrors.notFound("Conversation not found")
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
     }
 
     const rows = await sql<Array<{ id: string; role: "user" | "assistant" | "system"; content: string }>>`
@@ -71,7 +69,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ messages, conversationId })
   } catch (error) {
     console.error("chat history api error", error)
-    return apiErrors.internal("Failed to load chat history")
+    return NextResponse.json({ error: "Failed to load chat history" }, { status: 500 })
   }
 }
 
@@ -79,15 +77,18 @@ export async function POST(request: Request) {
   try {
     const user = await getSessionUser()
     if (!user) {
-      return apiErrors.unauthorized()
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = (await request.json()) as { messages?: UIMessage[]; conversationId?: string }
     const messages = body.messages || []
     const clientId = await getClientIdByUser(user.id)
     if (!clientId) {
-      return apiErrors.notFound("Client profile not found")
+      return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
     }
+
+    const context = await getChatContext(clientId)
+    const system = buildChatContext(context)
 
     const latestUserMessage = [...messages].reverse().find((message) => message.role === "user")
     const latestUserText = latestUserMessage?.parts
@@ -96,17 +97,13 @@ export async function POST(request: Request) {
       .join("\n")
       .trim()
 
-    const context = await getChatContext(clientId)
-    const intent = await classifyChatIntent(latestUserText ?? "")
-    const system = buildSystemPrompt(context, intent.type, clientId)
-
     const url = new URL(request.url)
     let conversationId = body.conversationId ?? url.searchParams.get("conversationId") ?? undefined
 
     if (conversationId) {
       const allowed = await hasConversationAccess(conversationId, clientId)
       if (!allowed) {
-        return apiErrors.notFound("Conversation not found")
+        return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
       }
     }
 
@@ -182,6 +179,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error("chat api error", error)
-    return apiErrors.internal("Failed to generate chat response")
+    return NextResponse.json({ error: "Failed to generate chat response" }, { status: 500 })
   }
 }

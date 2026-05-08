@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
-import { apiErrors } from "@/lib/http/api-errors"
 
 async function getClientIdByUser(userId: string) {
   const clients = await sql<Array<{ id: string }>>`
@@ -32,22 +31,22 @@ export async function PATCH(
     const { id } = await params
     const user = await getSessionUser()
     if (!user) {
-      return apiErrors.unauthorized()
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const clientId = await getClientIdByUser(user.id)
     if (!clientId) {
-      return apiErrors.notFound("Client profile not found")
+      return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
     }
 
     if (!(await hasConversationAccess(id, clientId))) {
-      return apiErrors.notFound("Conversation not found")
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
     }
 
     const body = (await request.json()) as { title?: string }
     const title = body.title?.trim()
     if (!title) {
-      return apiErrors.badRequest("Title is required")
+      return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
     await sql`
@@ -59,7 +58,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("update conversation api error", error)
-    return apiErrors.internal("Failed to update conversation")
+    return NextResponse.json({ error: "Failed to update conversation" }, { status: 500 })
   }
 }
 
@@ -71,16 +70,16 @@ export async function DELETE(
     const { id } = await params
     const user = await getSessionUser()
     if (!user) {
-      return apiErrors.unauthorized()
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const clientId = await getClientIdByUser(user.id)
     if (!clientId) {
-      return apiErrors.notFound("Client profile not found")
+      return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
     }
 
     if (!(await hasConversationAccess(id, clientId))) {
-      return apiErrors.notFound("Conversation not found")
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
     }
 
     await sql`
@@ -91,6 +90,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("delete conversation api error", error)
-    return apiErrors.internal("Failed to delete conversation")
+    return NextResponse.json({ error: "Failed to delete conversation" }, { status: 500 })
   }
 }

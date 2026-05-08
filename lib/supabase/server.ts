@@ -82,10 +82,10 @@ class TableQuery {
   }
 
   async then<TResult1 = unknown, TResult2 = never>(
-    onfulfilled?: ((value: { data: unknown; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+    onfulfilled?: ((value: { data: any; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): Promise<TResult1 | TResult2> {
-    return (this.executeSelect() as Promise<{ data: unknown; error: null }>).then(
+    return (this.executeSelect() as Promise<{ data: any; error: null }>).then(
       onfulfilled ?? undefined,
       onrejected ?? undefined,
     )
@@ -143,7 +143,7 @@ class TableQuery {
   }
 
   private async fetchRows() {
-    const values: unknown[] = []
+    const values: any[] = []
     const whereClause = this.buildWhereClause(values)
 
     if (this.pendingUpdate) {
