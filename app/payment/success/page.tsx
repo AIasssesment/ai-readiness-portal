@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { CheckCircle2, Clock3, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,22 @@ import { getReportRequest, readLatestReportRequestId } from "@/lib/api/payments"
 import type { ReportRequestResponse } from "@/lib/api/types"
 import { t, type Locale, isLocale } from "@/lib/i18n"
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessFallback() {
+  return (
+    <main className="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-10">
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+          </div>
+          <CardTitle className="text-muted-foreground">…</CardTitle>
+        </CardHeader>
+      </Card>
+    </main>
+  )
+}
+
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [reportRequest, setReportRequest] = useState<ReportRequestResponse | null>(null)
@@ -130,5 +145,13 @@ export default function PaymentSuccessPage() {
         </CardContent>
       </Card>
     </main>
+  )
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<PaymentSuccessFallback />}>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
