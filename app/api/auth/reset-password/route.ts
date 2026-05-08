@@ -43,6 +43,11 @@ export async function POST(request: Request) {
         do update set password_hash = excluded.password_hash
       `
       await tx`
+        update app_users
+        set assessment_provision_expires_at = null
+        where id = ${row.user_id}
+      `
+      await tx`
         update password_reset_tokens
         set used_at = now()
         where id = ${row.id}

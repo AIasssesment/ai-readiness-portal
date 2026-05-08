@@ -42,6 +42,15 @@ export default function LoginPage() {
   const orLabel = locale === "uk" ? "або" : "or"
   const resetEmailSent = searchParams.get("reset_email") === "sent"
 
+  const appliedEmailFromQuery = useRef(false)
+  useEffect(() => {
+    const fromQuery = searchParams.get("email")?.trim()
+    if (fromQuery && !appliedEmailFromQuery.current) {
+      appliedEmailFromQuery.current = true
+      setEmail(fromQuery)
+    }
+  }, [searchParams])
+
   useEffect(() => {
     if (!resetEmailSent || hasShownResetToast.current) return
 

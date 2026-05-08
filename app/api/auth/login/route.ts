@@ -14,8 +14,10 @@ export async function POST(request: Request) {
       return apiErrors.badRequest("Email and password are required")
     }
 
-    const rows = await sql<{ id: string; email: string; password_hash: string }[]>`
-      select u.id, u.email, c.password_hash
+    const rows = await sql<
+      { id: string; email: string; password_hash: string; assessment_provision_expires_at: Date | null }[]
+    >`
+      select u.id, u.email, c.password_hash, u.assessment_provision_expires_at
       from app_users u
       join user_credentials c on c.user_id = u.id
       where lower(u.email) = ${email}
@@ -25,6 +27,14 @@ export async function POST(request: Request) {
     const user = rows[0]
     if (!user) {
       return apiErrors.unauthorized("Invalid email or password")
+    }
+
+    if (user.assessment_provision_expires_at) {
+      const exp = new Date(user.assessment_provision_expires_at).getTime()
+      if (Number.isFinite(exp) && exp < Date.now()) {
+        await sql`delete from app_users where id = ${user.id}`
+        return apiErrors.unauthorized("Invalid email or password")
+      }
     }
 
     const valid = await verifyPassword(password, user.password_hash)
