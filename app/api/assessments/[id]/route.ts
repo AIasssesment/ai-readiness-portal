@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { apiErrors } from "@/lib/http/api-errors"
 import { dbAssessmentRowToResults } from "@/lib/assessment/db-assessment-to-results"
 
+const PAID_REPORT_STATUSES = new Set(["paid", "pending_manual", "ready"])
+
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
@@ -35,6 +37,18 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const r = row as Record<string, unknown>
     const results = dbAssessmentRowToResults(r, clientId)
 
+    const { data: reportRequestRows } = await db
+      .from("report_requests")
+      .select("status")
+      .eq("client_id", clientId)
+      .eq("assessment_id", id)
+
+    const hasExtendedAccess = Array.isArray(reportRequestRows)
+      ? reportRequestRows.some(
+          (rr: { status?: string }) => rr.status && PAID_REPORT_STATUSES.has(rr.status),
+        )
+      : false
+
     return NextResponse.json({
       assessment: {
         id: String(r.id),
@@ -45,6 +59,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
         dimensionScores: results.dimensionScores,
         answers: results.answers,
         companyInfo: results.companyInfo,
+        hasExtendedAccess,
       },
     })
   } catch (error) {

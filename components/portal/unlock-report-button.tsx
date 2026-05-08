@@ -49,8 +49,6 @@ function logBreadcrumb(event: string, payload: Record<string, unknown>) {
   console.info(`[payments] ${event}`, payload)
 }
 
-const PAYMENT_TEST_MODE = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true"
-
 export function UnlockReportButton({
   label,
   className,
@@ -74,7 +72,7 @@ export function UnlockReportButton({
   const { t, locale } = useLanguage()
   const resolvedLabel = label ?? t("unlock.fullReport")
 
-  const reportReady = readiness?.reportDataReady ?? true
+  const reportReady = readiness?.reportDataReady ?? false
 
   useEffect(() => {
     if (!open) return
@@ -145,15 +143,6 @@ export function UnlockReportButton({
     if (simulatePaymentFailure) {
       setPhase("payment_error")
       setErrorMessage(t("unlock.paymentFailedDescription"))
-      return
-    }
-
-    if (PAYMENT_TEST_MODE) {
-      const rl = `&returnLocale=${encodeURIComponent(locale)}`
-      const successPath = assessmentId
-        ? `/payment/success?assessmentId=${encodeURIComponent(assessmentId)}&testPaid=1${rl}`
-        : `/payment/success?testPaid=1${rl}`
-      window.location.href = successPath
       return
     }
 

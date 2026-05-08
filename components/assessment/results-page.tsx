@@ -8,10 +8,6 @@ import { useAssessmentStore } from '@/lib/assessment-store'
 import { BasicResults } from './basic-results'
 import { ExtendedReportUpsell } from './extended-report-upsell'
 import { ExtendedReport } from './extended-report'
-<<<<<<< HEAD
-=======
-import { createClient } from '@/lib/db-client/client'
->>>>>>> 6e913c4 (feat(portal): render full ExtendedReport on paid assessment detail page)
 import Link from 'next/link'
 import { useLanguage } from '@/components/language-provider'
 
@@ -19,7 +15,6 @@ export function ResultsPage() {
   const { locale } = useLanguage()
   const { hasPurchasedExtended, reset, results, purchaseExtendedReport } = useAssessmentStore()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-<<<<<<< HEAD
 
   useEffect(() => {
     async function checkAuth() {
@@ -35,17 +30,7 @@ export function ResultsPage() {
     window.addEventListener('portal-auth-changed', checkAuth)
     return () => window.removeEventListener('portal-auth-changed', checkAuth)
   }, [])
-=======
-  const db = useMemo(() => createClient(), [])
   const paymentTestMode = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true'
-
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { user } } = await db.auth.getUser()
-      setIsLoggedIn(!!user)
-    }
-    checkAuth()
-  }, [db])
 
   useEffect(() => {
     if (!paymentTestMode || hasPurchasedExtended || !results?.savedAssessmentId || typeof document === 'undefined') return
@@ -65,7 +50,6 @@ export function ResultsPage() {
       purchaseExtendedReport()
     }
   }, [hasPurchasedExtended, paymentTestMode, purchaseExtendedReport, results?.savedAssessmentId])
->>>>>>> 6e913c4 (feat(portal): render full ExtendedReport on paid assessment detail page)
 
   return (
     <div className="space-y-8">

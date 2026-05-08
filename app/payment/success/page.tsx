@@ -22,7 +22,6 @@ export default function PaymentSuccessPage() {
   }, [searchParams])
 
   const assessmentIdFromQuery = useMemo(() => searchParams.get("assessmentId"), [searchParams])
-  const testPaid = useMemo(() => searchParams.get("testPaid") === "1", [searchParams])
 
   const returnLocaleParam = searchParams.get("returnLocale")
   const locale = useMemo((): Locale => {
@@ -57,19 +56,19 @@ export default function PaymentSuccessPage() {
     }
   }, [reportRequestId, locale])
 
-  const effectiveStatus = testPaid ? "ready" : reportRequest?.status
+  const status = reportRequest?.status
 
   const headline = useMemo(() => {
-    if (effectiveStatus === "ready") return t(locale, "payment.success.headline.ready")
-    if (effectiveStatus === "pending_manual") return t(locale, "payment.success.headline.pendingManual")
+    if (status === "ready") return t(locale, "payment.success.headline.ready")
+    if (status === "pending_manual") return t(locale, "payment.success.headline.pendingManual")
     return t(locale, "payment.success.headline.default")
-  }, [effectiveStatus, locale])
+  }, [status, locale])
 
   const subtitle = useMemo(() => {
-    if (effectiveStatus === "ready") return t(locale, "payment.success.subtitle.ready")
-    if (effectiveStatus === "pending_manual") return t(locale, "payment.success.subtitle.pendingManual")
+    if (status === "ready") return t(locale, "payment.success.subtitle.ready")
+    if (status === "pending_manual") return t(locale, "payment.success.subtitle.pendingManual")
     return t(locale, "payment.success.subtitle.default")
-  }, [effectiveStatus, locale])
+  }, [status, locale])
 
   const assessmentIdFromRequest =
     (reportRequest as unknown as { assessmentId?: string; assessment_id?: string } | null)?.assessmentId ??
@@ -81,30 +80,10 @@ export default function PaymentSuccessPage() {
     const params = new URLSearchParams()
     params.set("openResults", "1")
     if (targetAssessmentId) params.set("assessmentId", targetAssessmentId)
-    if (testPaid) params.set("testPaid", "1")
     return `/${locale}?${params.toString()}`
-  }, [locale, targetAssessmentId, testPaid])
+  }, [locale, targetAssessmentId])
 
   const openPaidReport = () => {
-    if (testPaid && targetAssessmentId && typeof document !== "undefined") {
-      const key = "test_paid_assessment_ids"
-      const current = document.cookie
-        .split("; ")
-        .find((part) => part.startsWith(`${key}=`))
-        ?.split("=")[1]
-
-      const decoded = current ? decodeURIComponent(current) : ""
-      const ids = new Set(
-        decoded
-          .split(",")
-          .map((id) => id.trim())
-          .filter(Boolean),
-      )
-      ids.add(targetAssessmentId)
-
-      document.cookie = `${key}=${encodeURIComponent(Array.from(ids).join(","))}; path=/; max-age=2592000; samesite=lax`
-    }
-
     window.location.assign(openReportHref)
   }
 
@@ -125,7 +104,7 @@ export default function PaymentSuccessPage() {
             </div>
           ) : null}
 
-          {effectiveStatus === "pending_manual" ? (
+          {status === "pending_manual" ? (
             <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-foreground">
               <p className="flex items-start gap-2">
                 <Clock3 className="mt-0.5 h-4 w-4 text-amber-600" />
