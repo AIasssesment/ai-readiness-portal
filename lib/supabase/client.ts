@@ -1,5 +1,3 @@
-import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
-
 type QueryFilter = { column: string; value: unknown }
 
 class ClientTableQuery {
@@ -22,7 +20,7 @@ class ClientTableQuery {
   }
 
   then<TResult1 = unknown, TResult2 = never>(
-    onfulfilled?: ((value: { data: unknown; error: null } | { data: null | unknown[]; error: { message: string } }) => TResult1 | PromiseLike<TResult1>) | null,
+    onfulfilled?: ((value: { data: unknown[]; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): Promise<TResult1 | TResult2> {
     return this.execute(false).then(onfulfilled ?? undefined, onrejected ?? undefined)
@@ -45,14 +43,11 @@ class ClientTableQuery {
       }),
     })
 
-    const json = (await response.json()) as unknown
+    const json = await response.json()
     if (!response.ok) {
-      return {
-        data: single ? null : [],
-        error: { message: parseApiErrorMessage(json) || "Query failed" },
-      }
+      return { data: single ? null : [], error: { message: json.error || "Query failed" } }
     }
-    return { data: (json as { data: unknown }).data, error: null }
+    return { data: json.data, error: null }
   }
 }
 
@@ -70,10 +65,8 @@ export function createClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         })
-        const json = (await response.json()) as unknown
-        return response.ok
-          ? { error: null }
-          : { error: { message: parseApiErrorMessage(json) ?? "Request failed" } }
+        const json = await response.json()
+        return response.ok ? { error: null } : { error: { message: json.error } }
       },
       signUp: async ({
         email,
@@ -94,21 +87,15 @@ export function createClient() {
             contactName: options?.data?.contact_name,
           }),
         })
-        const json = (await response.json()) as unknown
-        return response.ok
-          ? { error: null }
-          : { error: { message: parseApiErrorMessage(json) ?? "Request failed" } }
+        const json = await response.json()
+        return response.ok ? { error: null } : { error: { message: json.error } }
       },
       signOut: async () => {
         await fetch("/api/auth/logout", { method: "POST" })
       },
-      signInWithOAuth: async ({ provider }: { provider: "google" }) => {
-        if (typeof window !== "undefined" && provider === "google") {
-          window.location.href = "/api/auth/google/start?next=/portal"
-          return { error: null }
-        }
-        return { error: { message: "Unsupported OAuth provider" } }
-      },
+      signInWithOAuth: async () => ({
+        error: { message: "OAuth is not configured for Neon auth yet." },
+      }),
     },
     from: (tableName: "clients") => new ClientTableQuery(tableName),
   }

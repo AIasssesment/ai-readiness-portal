@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { JobRiskGenerateButton } from "@/components/portal/job-risk-generate-button"
-import { RiskOverview } from "@/components/portal/risk-overview"
 import { ShieldCheck, Building2, Clock, ArrowRight } from "lucide-react"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
@@ -93,6 +92,8 @@ export default async function JobRiskPage({
     where client_id = ${client.id}
     order by employee_count desc
   `
+  const workforceTotal = workforceRows.reduce((sum, row) => sum + row.employee_count, 0)
+
   const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null; generated_at: string }>>`
     select id, overall_risk_score, executive_summary, generated_at
     from job_risk_reports
@@ -167,16 +168,18 @@ export default async function JobRiskPage({
 
   return (
     <div className="space-y-6">
-      <RiskOverview
-        overallRiskScore={Number(latestReport.overall_risk_score)}
-        executiveSummary={latestReport.executive_summary}
-        generatedAt={latestReport.generated_at}
-      />
-
       <Card className="border-border/40 bg-card/80 shadow-sm">
         <CardHeader className="space-y-3">
-          <CardTitle>{t(locale, "jobRisk.overallDisruptionRisk")}</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle>{t(locale, "jobRisk.overallDisruptionRisk")}</CardTitle>
+            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/15 text-emerald-200">
+              {Number(latestReport.overall_risk_score).toFixed(1)} / 5
+            </Badge>
+          </div>
           <Progress value={riskPercent(Number(latestReport.overall_risk_score))} className="h-2 bg-muted/60" />
+          <CardDescription>
+            {latestReport.executive_summary || t(locale, "jobRisk.noSummary")}
+          </CardDescription>
           <div className="grid gap-2 pt-1 sm:grid-cols-2">
             <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.totalEmployees")}</p>

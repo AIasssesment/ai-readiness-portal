@@ -8,6 +8,7 @@ import {
   ArrowLeft, 
   Download, 
   Calendar, 
+  TrendingUp,
   CheckCircle2,
   AlertTriangle,
   Lightbulb,
@@ -105,7 +106,7 @@ export default async function AssessmentDetailPage({
     .from("assessments")
     .select()
     .eq("id", id)
-    .eq("client_id", (client as { id?: string } | null)?.id)
+    .eq("client_id", (client as any)?.id)
     .single()
 
   // Get related opportunities
@@ -282,7 +283,7 @@ export default async function AssessmentDetailPage({
           <CardContent>
             <ul className="space-y-3">
               {Object.entries(dimensionScores)
-                .filter(([, value]) => (value as number) >= 60)
+                .filter(([_, value]) => (value as number) >= 60)
                 .sort((a, b) => (b[1] as number) - (a[1] as number))
                 .slice(0, 3)
                 .map(([key, value]) => (
@@ -296,7 +297,7 @@ export default async function AssessmentDetailPage({
                     </div>
                   </li>
                 ))}
-              {Object.entries(dimensionScores).filter(([, value]) => (value as number) >= 60).length === 0 && (
+              {Object.entries(dimensionScores).filter(([_, value]) => (value as number) >= 60).length === 0 && (
                 <li className="text-muted-foreground">{t(locale, "assessmentDetail.foundationFocus")}</li>
               )}
             </ul>
@@ -313,7 +314,7 @@ export default async function AssessmentDetailPage({
           <CardContent>
             <ul className="space-y-3">
               {Object.entries(dimensionScores)
-                .filter(([, value]) => (value as number) < 60)
+                .filter(([_, value]) => (value as number) < 60)
                 .sort((a, b) => (a[1] as number) - (b[1] as number))
                 .slice(0, 3)
                 .map(([key, value]) => (
@@ -327,7 +328,7 @@ export default async function AssessmentDetailPage({
                     </div>
                   </li>
                 ))}
-              {Object.entries(dimensionScores).filter(([, value]) => (value as number) < 60).length === 0 && (
+              {Object.entries(dimensionScores).filter(([_, value]) => (value as number) < 60).length === 0 && (
                 <li className="text-emerald-600 flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5" />
                   {t(locale, "assessmentDetail.allGood")}

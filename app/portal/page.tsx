@@ -10,10 +10,10 @@ import {
   Clock,
   ArrowRight,
   CheckCircle2,
+  AlertCircle,
   Zap
 } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
-import { MaturityTrendChart } from "@/components/portal/maturity-trend-chart"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
 
@@ -81,7 +81,7 @@ export default async function PortalDashboard() {
   const { data: assessments } = await supabase
     .from("assessments")
     .select()
-    .eq("client_id", (client as { id?: string } | null)?.id)
+    .eq("client_id", (client as any)?.id)
     .order("created_at", { ascending: false })
     .limit(5)
 
@@ -89,7 +89,7 @@ export default async function PortalDashboard() {
   const { data: opportunities } = await supabase
     .from("opportunities")
     .select()
-    .eq("client_id", (client as { id?: string } | null)?.id)
+    .eq("client_id", (client as any)?.id)
     .order("priority", { ascending: true })
 
   // Get latest assessment
@@ -108,10 +108,6 @@ export default async function PortalDashboard() {
     0,
   )
   const formattedTotalHoursSaved = Number(totalHoursSaved.toFixed(1)).toLocaleString()
-  const trendPoints = typedAssessments.map((assessment) => ({
-    date: assessment.created_at,
-    score: assessment.overall_score,
-  }))
 
   return (
     <div className="space-y-8">
@@ -201,8 +197,6 @@ export default async function PortalDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      <MaturityTrendChart points={trendPoints} />
 
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-2">

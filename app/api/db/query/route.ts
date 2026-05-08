@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
-import { apiErrors } from "@/lib/http/api-errors"
 
 type Body = {
   table: "clients"
@@ -13,13 +12,13 @@ type Body = {
 export async function POST(request: Request) {
   const user = await getSessionUser()
   if (!user) {
-    return apiErrors.unauthorized()
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
     const body = (await request.json()) as Body
     if (body.table !== "clients") {
-      return apiErrors.badRequest("Unsupported table")
+      return NextResponse.json({ error: "Unsupported table" }, { status: 400 })
     }
 
     if (body.update) {
@@ -41,6 +40,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: body.single ? (rows[0] ?? null) : rows })
   } catch (error) {
     console.error("db query error", error)
-    return apiErrors.internal("Query failed")
+    return NextResponse.json({ error: "Query failed" }, { status: 500 })
   }
 }
