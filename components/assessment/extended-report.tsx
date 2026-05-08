@@ -21,7 +21,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAssessmentStore } from '@/lib/assessment-store'
+import type { AssessmentResults, ExtendedReportData } from '@/lib/types'
 import { cn } from '@/lib/utils'
+
+export type ExtendedReportProps = {
+  extendedReport?: ExtendedReportData | null
+  results?: AssessmentResults | null
+}
 
 const severityColors = {
   low: 'bg-accent/20 text-accent',
@@ -41,9 +47,14 @@ const implementationColors = {
   'long-term': 'bg-muted-foreground text-background',
 }
 
-export function ExtendedReport() {
-  const extendedReport = useAssessmentStore((state) => state.extendedReport)
-  const results = useAssessmentStore((state) => state.results)
+export function ExtendedReport({
+  extendedReport: extendedProp,
+  results: resultsProp,
+}: ExtendedReportProps = {}) {
+  const extendedReportFromStore = useAssessmentStore((state) => state.extendedReport)
+  const resultsFromStore = useAssessmentStore((state) => state.results)
+  const extendedReport = extendedProp ?? extendedReportFromStore
+  const results = resultsProp ?? resultsFromStore
 
   if (!extendedReport || !results) return null
 

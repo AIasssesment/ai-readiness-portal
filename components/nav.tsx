@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/db-client/client'
 import { useLanguage } from '@/components/language-provider'
 import { LayoutDashboard, LogIn } from 'lucide-react'
 
@@ -13,18 +13,22 @@ interface NavProps {
 
 export function Nav({ onStartAssessment }: NavProps) {
   const { locale, t } = useLanguage()
-  const supabase = useMemo(() => createClient(), [])
+  const db = useMemo(() => createClient(), [])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await db.auth.getUser()
       setIsLoggedIn(!!user)
       setIsCheckingAuth(false)
     }
-    checkAuth()
-  }, [supabase])
+    void checkAuth()
+    window.addEventListener('portal-auth-changed', checkAuth)
+    return () => window.removeEventListener('portal-auth-changed', checkAuth)
+  }, [db])
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-12">

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/db-client/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,7 +34,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const db = createClient()
   const { t, locale } = useLanguage()
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -44,7 +44,7 @@ export default function SignUpPage() {
 
     const companyWebsite = normalizeCompanyWebsiteInput(companyName)
 
-    const { error } = await supabase.auth.signUp({
+    const { error } = await db.auth.signUp({
       email,
       password,
       options: {

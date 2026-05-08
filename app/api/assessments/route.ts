@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/db-client/server"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const db = await createClient()
+    const { data: { user } } = await db.auth.getUser()
     
     const body = await request.json()
     const { 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     // If user is logged in, save to their account
     if (user) {
       // Get or create client record
-      let { data: client } = await supabase
+      let { data: client } = await db
         .from("clients")
         .select("*")
         .eq("user_id", user.id)
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
       if (!client) {
         // Create client record
-        const { data: newClient, error: clientError } = await supabase
+        const { data: newClient, error: clientError } = await db
           .from("clients")
           .insert({
             user_id: user.id,
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       }
 
       // Update client info with latest assessment info
-      await supabase
+      await db
         .from("clients")
         .update({
           company_name: companyInfo?.companyName || client.company_name,
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         .eq("id", client.id)
 
       // Save assessment
-      const { data: assessment, error: assessmentError } = await supabase
+      const { data: assessment, error: assessmentError } = await db
         .from("assessments")
         .insert({
           client_id: client.id,
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
           status: "identified"
         }))
 
-        const { error: oppError } = await supabase
+        const { error: oppError } = await db
           .from("opportunities")
           .insert(opportunitiesWithIds)
 
@@ -134,15 +134,15 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const db = await createClient()
+    const { data: { user } } = await db.auth.getUser()
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Get client
-    const { data: client } = await supabase
+    const { data: client } = await db
       .from("clients")
       .select("*")
       .eq("user_id", user.id)
@@ -153,7 +153,7 @@ export async function GET() {
     }
 
     // Get assessments
-    const { data: assessments, error } = await supabase
+    const { data: assessments, error } = await db
       .from("assessments")
       .select("*")
       .eq("client_id", client.id)

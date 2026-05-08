@@ -3,7 +3,7 @@ import { sql } from "@/lib/db"
 
 type Filter = { column: string; value: unknown }
 type Ordering = { column: string; ascending: boolean }
-type TableName = "clients" | "assessments" | "opportunities"
+type TableName = "clients" | "assessments" | "opportunities" | "report_requests"
 
 const ALLOWED_COLUMNS: Record<TableName, Set<string>> = {
   clients: new Set([
@@ -43,6 +43,19 @@ const ALLOWED_COLUMNS: Record<TableName, Set<string>> = {
     "implementation_timeline",
     "status",
     "notes",
+    "created_at",
+    "updated_at",
+  ]),
+  report_requests: new Set([
+    "id",
+    "client_id",
+    "assessment_id",
+    "payment_id",
+    "mode",
+    "status",
+    "amount",
+    "currency",
+    "missing_reasons",
     "created_at",
     "updated_at",
   ]),

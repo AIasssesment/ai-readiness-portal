@@ -1,4 +1,4 @@
-import { updateSession } from '@/lib/supabase/middleware'
+import { updateSession } from '@/lib/db-client/middleware'
 import { type NextRequest, NextResponse } from 'next/server'
 import { LOCALE_COOKIE_NAME } from '@/lib/i18n'
 

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/db-client/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,7 @@ import {
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
+import { cookies } from "next/headers"
 
 type Client = {
   id: string
@@ -31,6 +32,13 @@ type Assessment = {
   created_at: string
   status: string
 }
+
+type ReportRequestRow = {
+  assessment_id: string | null
+  status: string
+}
+
+const PAID_REPORT_STATUSES = new Set(["paid", "pending_manual", "ready"])
 
 type Opportunity = {
   id: string
@@ -67,18 +75,18 @@ function getStatusBadge(status: string, locale: "en" | "uk") {
 
 export default async function PortalDashboard() {
   const locale = await getServerLocale()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const db = await createClient()
+  const { data: { user } } = await db.auth.getUser()
 
   // Get client
-  const { data: client } = await supabase
+  const { data: client } = await db
     .from("clients")
     .select()
     .eq("user_id", user?.id)
     .single()
 
   // Get assessments
-  const { data: assessments } = await supabase
+  const { data: assessments } = await db
     .from("assessments")
     .select()
     .eq("client_id", (client as any)?.id)
@@ -86,7 +94,7 @@ export default async function PortalDashboard() {
     .limit(5)
 
   // Get opportunities
-  const { data: opportunities } = await supabase
+  const { data: opportunities } = await db
     .from("opportunities")
     .select()
     .eq("client_id", (client as any)?.id)
@@ -97,7 +105,39 @@ export default async function PortalDashboard() {
   const typedAssessments = (assessments as unknown as Assessment[]) || []
   const typedOpportunities = (opportunities as unknown as Opportunity[]) || []
   const latestAssessment = typedAssessments[0]
-  const hasExtendedAccess = Boolean(typedClient?.has_extended_access)
+  const reportRequestsQuery = (db as unknown as {
+    from: (table: string) => {
+      select: () => { eq: (column: string, value: string | undefined) => Promise<{ data: unknown }> }
+    }
+  })
+
+  const { data: reportRequests } = await reportRequestsQuery
+    .from("report_requests")
+    .select()
+    .eq("client_id", (client as { id?: string } | null)?.id)
+
+  const unlockedAssessmentIds = new Set(
+    ((reportRequests as unknown as ReportRequestRow[] | null) ?? [])
+      .filter((row) => PAID_REPORT_STATUSES.has(row.status))
+      .map((row) => row.assessment_id)
+      .filter((id): id is string => Boolean(id)),
+  )
+
+  const latestAssessmentUnlocked = latestAssessment
+    ? unlockedAssessmentIds.has(latestAssessment.id)
+    : false
+
+  const testModeEnabled = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true"
+  let latestAssessmentUnlockedInTest = false
+  if (testModeEnabled && latestAssessment) {
+    const cookieStore = await cookies()
+    const fromCookie = cookieStore.get("test_paid_assessment_ids")?.value ?? ""
+    latestAssessmentUnlockedInTest = fromCookie
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .includes(latestAssessment.id)
+  }
 
   // Calculate stats
   const totalOpportunities = typedOpportunities.length
@@ -139,7 +179,7 @@ export default async function PortalDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{assessments?.length || 0}</div>
+            <div className="text-2xl font-bold">{typedAssessments.length}</div>
             <p className="text-xs text-muted-foreground">
               {latestAssessment
                 ? `${t(locale, "dashboard.latestPrefix")} ${new Date(latestAssessment.created_at).toLocaleDateString()}`
@@ -238,7 +278,7 @@ export default async function PortalDashboard() {
                   <span className="text-muted-foreground">{t(locale, "status.completed")}</span>
                   <span>{new Date(latestAssessment.created_at).toLocaleDateString()}</span>
                 </div>
-                {hasExtendedAccess ? (
+                {latestAssessmentUnlocked || latestAssessmentUnlockedInTest ? (
                   <Link href={`/portal/assessments/${latestAssessment.id}`}>
                     <Button variant="outline" className="w-full mt-2 gap-2">
                       {t(locale, "dashboard.viewFullReport")}
@@ -246,7 +286,12 @@ export default async function PortalDashboard() {
                     </Button>
                   </Link>
                 ) : (
-                  <UnlockReportButton className="w-full mt-2 gap-2" />
+                  <UnlockReportButton
+                    className="w-full mt-2 gap-2"
+                    clientId={typedClient?.id}
+                    assessmentId={latestAssessment.id}
+                    mode="charge_and_manual"
+                  />
                 )}
               </div>
             ) : (
