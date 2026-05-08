@@ -43,14 +43,12 @@ function buildReturnUrl(path: string) {
   return `${window.location.origin}${path}`
 }
 
-const PAYMENT_TEST_MODE = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true'
-
 export function ExtendedReportUpsell() {
   const { t, locale } = useLanguage()
   const [showCheckout, setShowCheckout] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isCheckingReadiness, setIsCheckingReadiness] = useState(false)
-  const [reportDataReady, setReportDataReady] = useState(true)
+  const [reportDataReady, setReportDataReady] = useState(false)
   const [missingReasons, setMissingReasons] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const results = useAssessmentStore((state) => state.results)
@@ -106,15 +104,6 @@ export function ExtendedReportUpsell() {
     setError(null)
 
     try {
-      if (PAYMENT_TEST_MODE) {
-        const rl = `&returnLocale=${encodeURIComponent(locale)}`
-        const successPath = assessmentId
-          ? `/payment/success?assessmentId=${encodeURIComponent(assessmentId)}&testPaid=1${rl}`
-          : `/payment/success?testPaid=1${rl}`
-        window.location.href = successPath
-        return
-      }
-
       const successPath = assessmentId
         ? `/payment/success?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
         : `/payment/success?returnLocale=${encodeURIComponent(locale)}`

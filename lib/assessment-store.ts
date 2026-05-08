@@ -30,6 +30,7 @@ interface AssessmentStore {
     tier: AssessmentResults['tier']
     savedAssessmentId: string
     savedClientId?: string
+    hasExtendedAccess?: boolean
   }) => void
   reset: () => void
 }
@@ -525,6 +526,7 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
       extendedReport,
       step: 'results',
       currentQuestionIndex: 0,
+      hasPurchasedExtended: payload.hasExtendedAccess ?? false,
     })
   },
   

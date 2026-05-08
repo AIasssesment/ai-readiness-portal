@@ -10,7 +10,6 @@ import { PortalAssessmentFullReport } from "@/components/portal/portal-assessmen
 import { dbAssessmentRowToResults } from "@/lib/assessment/db-assessment-to-results"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
-import { cookies } from "next/headers"
 
 type Client = {
   id: string
@@ -102,19 +101,7 @@ export default async function AssessmentDetailPage({
     PAID_REPORT_STATUSES.has(row.status),
   )
 
-  const testModeEnabled = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true"
-  let hasTestAccess = false
-  if (testModeEnabled) {
-    const cookieStore = await cookies()
-    const fromCookie = cookieStore.get("test_paid_assessment_ids")?.value ?? ""
-    hasTestAccess = fromCookie
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .includes(id)
-  }
-
-  if (!hasAssessmentAccess && !hasTestAccess) {
+  if (!hasAssessmentAccess) {
     return (
       <div className="space-y-8">
         <div className="flex items-center gap-4">

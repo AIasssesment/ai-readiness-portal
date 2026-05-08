@@ -16,7 +16,6 @@ import {
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
-import { cookies } from "next/headers"
 
 type Client = {
   id: string
@@ -126,18 +125,6 @@ export default async function PortalDashboard() {
   const latestAssessmentUnlocked = latestAssessment
     ? unlockedAssessmentIds.has(latestAssessment.id)
     : false
-
-  const testModeEnabled = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true"
-  let latestAssessmentUnlockedInTest = false
-  if (testModeEnabled && latestAssessment) {
-    const cookieStore = await cookies()
-    const fromCookie = cookieStore.get("test_paid_assessment_ids")?.value ?? ""
-    latestAssessmentUnlockedInTest = fromCookie
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean)
-      .includes(latestAssessment.id)
-  }
 
   // Calculate stats
   const totalOpportunities = typedOpportunities.length
@@ -278,7 +265,7 @@ export default async function PortalDashboard() {
                   <span className="text-muted-foreground">{t(locale, "status.completed")}</span>
                   <span>{new Date(latestAssessment.created_at).toLocaleDateString()}</span>
                 </div>
-                {latestAssessmentUnlocked || latestAssessmentUnlockedInTest ? (
+                {latestAssessmentUnlocked ? (
                   <Link href={`/portal/assessments/${latestAssessment.id}`}>
                     <Button variant="outline" className="w-full mt-2 gap-2">
                       {t(locale, "dashboard.viewFullReport")}

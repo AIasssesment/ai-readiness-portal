@@ -7,7 +7,6 @@ import { FileText, Calendar, TrendingUp, ArrowRight, Zap } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
-import { cookies } from "next/headers"
 
 function getReadinessColor(level: string) {
   switch (level) {
@@ -88,17 +87,6 @@ export default async function AssessmentsPage() {
       .map((row) => row.assessment_id)
       .filter((id): id is string => Boolean(id)),
   )
-
-  const testModeEnabled = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true"
-  if (testModeEnabled) {
-    const cookieStore = await cookies()
-    const fromCookie = cookieStore.get("test_paid_assessment_ids")?.value ?? ""
-    fromCookie
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean)
-      .forEach((id) => unlockedAssessmentIds.add(id))
-  }
 
   return (
     <div className="space-y-8">

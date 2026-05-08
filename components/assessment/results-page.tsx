@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RefreshCcw, LayoutDashboard, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,7 +8,6 @@ import { useAssessmentStore } from '@/lib/assessment-store'
 import { BasicResults } from './basic-results'
 import { ExtendedReportUpsell } from './extended-report-upsell'
 import { ExtendedReport } from './extended-report'
-import { createClient } from '@/lib/db-client/client'
 import Link from 'next/link'
 import { useLanguage } from '@/components/language-provider'
 
@@ -16,20 +15,22 @@ export function ResultsPage() {
   const { locale } = useLanguage()
   const { hasPurchasedExtended, reset, results, purchaseExtendedReport } = useAssessmentStore()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const db = useMemo(() => createClient(), [])
   const paymentTestMode = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true'
 
   useEffect(() => {
     async function checkAuth() {
-      const {
-        data: { user },
-      } = await db.auth.getUser()
-      setIsLoggedIn(!!user)
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        const data = (await res.json()) as { user?: unknown }
+        setIsLoggedIn(!!data.user)
+      } catch {
+        setIsLoggedIn(false)
+      }
     }
     void checkAuth()
     window.addEventListener('portal-auth-changed', checkAuth)
     return () => window.removeEventListener('portal-auth-changed', checkAuth)
-  }, [db])
+  }, [])
 
   useEffect(() => {
     if (!paymentTestMode || hasPurchasedExtended || !results?.savedAssessmentId || typeof document === 'undefined')

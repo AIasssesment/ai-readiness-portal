@@ -19,7 +19,6 @@ import type { CompanyInfo, AssessmentAnswer, DimensionScores } from '@/lib/types
 export default function HomePage() {
   const step = useAssessmentStore((state) => state.step)
   const setStep = useAssessmentStore((state) => state.setStep)
-  const purchaseExtendedReport = useAssessmentStore((state) => state.purchaseExtendedReport)
   const hydrateFromSavedAssessment = useAssessmentStore((state) => state.hydrateFromSavedAssessment)
   const assessmentRef = useRef<HTMLDivElement>(null)
   const { t } = useLanguage()
@@ -54,15 +53,13 @@ export default function HomePage() {
     }
 
     const assessmentId = searchParams.get('assessmentId')
-    const testPaid = searchParams.get('testPaid') === '1'
-    const dedupeKey = `${assessmentId ?? ''}|${testPaid ? '1' : '0'}`
+    const dedupeKey = assessmentId ?? ''
     if (handledOpenResultsKey.current === dedupeKey) return
 
     const run = async () => {
       if (!assessmentId) {
         handledOpenResultsKey.current = dedupeKey
         setStep('results')
-        if (testPaid) purchaseExtendedReport()
         router.replace(`/${locale}`, { scroll: false })
         return
       }
@@ -88,6 +85,7 @@ export default function HomePage() {
             overallScore: number
             dimensionScores: DimensionScores
             tier: 'high' | 'good' | 'early' | 'explore'
+            hasExtendedAccess?: boolean
           }
         }
 
@@ -100,8 +98,8 @@ export default function HomePage() {
           tier: a.tier,
           savedAssessmentId: a.id,
           savedClientId: a.clientId,
+          hasExtendedAccess: a.hasExtendedAccess,
         })
-        if (testPaid) purchaseExtendedReport()
         handledOpenResultsKey.current = dedupeKey
         router.replace(`/${locale}`, { scroll: false })
       } catch {
@@ -113,7 +111,7 @@ export default function HomePage() {
     }
 
     void run()
-  }, [hydrateFromSavedAssessment, locale, purchaseExtendedReport, router, searchParams, setStep, t])
+  }, [hydrateFromSavedAssessment, locale, router, searchParams, setStep, t])
 
   return (
     <main className="min-h-screen bg-background">
