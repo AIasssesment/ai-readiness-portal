@@ -12,19 +12,11 @@ import { useLanguage } from "@/components/language-provider"
 import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
 
 export default function ForgotPasswordPage() {
-  const { locale } = useLanguage()
+  const { locale, t } = useLanguage()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  const title = locale === "uk" ? "Відновлення пароля" : "Forgot password"
-  const subtitle =
-    locale === "uk"
-      ? "Введіть email, і ми надішлемо посилання для скидання."
-      : "Enter your email and we will send a reset link."
-  const submitLabel = locale === "uk" ? "Надіслати посилання" : "Send reset link"
-  const backLabel = locale === "uk" ? "Повернутися до входу" : "Back to sign in"
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -39,14 +31,14 @@ export default function ForgotPasswordPage() {
       })
       const payload = (await response.json()) as unknown
       if (!response.ok) {
-        setError(parseApiErrorMessage(payload) || (locale === "uk" ? "Не вдалося надіслати запит" : "Failed to process request"))
+        setError(parseApiErrorMessage(payload) || t("auth.forgotPassword.errorApi"))
         setIsLoading(false)
         return
       }
       router.push(`/${locale}/auth/login?reset_email=sent`)
       router.refresh()
     } catch {
-      setError(locale === "uk" ? "Помилка запиту" : "Request failed")
+      setError(t("auth.forgotPassword.errorRequest"))
     } finally {
       setIsLoading(false)
     }
@@ -61,8 +53,8 @@ export default function ForgotPasswordPage() {
               <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">{title}</CardTitle>
-          <CardDescription>{subtitle}</CardDescription>
+          <CardTitle className="text-2xl">{t("auth.forgotPassword.title")}</CardTitle>
+          <CardDescription>{t("auth.forgotPassword.subtitle")}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -84,14 +76,14 @@ export default function ForgotPasswordPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {locale === "uk" ? "Надсилання..." : "Sending..."}
+                  {t("auth.forgotPassword.sending")}
                 </>
               ) : (
-                submitLabel
+                t("auth.forgotPassword.submit")
               )}
             </Button>
             <Link href={`/${locale}/auth/login`} className="text-sm text-primary hover:underline">
-              {backLabel}
+              {t("auth.forgotPassword.back")}
             </Link>
           </CardFooter>
         </form>

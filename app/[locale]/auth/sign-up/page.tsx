@@ -36,8 +36,6 @@ export default function SignUpPage() {
   const router = useRouter()
   const db = createClient()
   const { t, locale } = useLanguage()
-  const googleLabel = locale === "uk" ? "Продовжити з Google" : "Continue with Google"
-  const orLabel = locale === "uk" ? "або" : "or"
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,7 +97,7 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyUrl">Company URL</Label>
+              <Label htmlFor="companyUrl">{t("auth.signup.companyUrl")}</Label>
               <Input
                 id="companyUrl"
                 type="text"
@@ -143,12 +141,12 @@ export default function SignUpPage() {
             >
               <a href="/api/auth/google/start?next=/portal">
                 <GoogleIcon />
-                {googleLabel}
-              </a> 
+                {t("auth.signup.google")}
+              </a>
             </Button>
             <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
-              <span>{orLabel}</span>
+              <span>{t("auth.signup.or")}</span>
               <div className="h-px flex-1 bg-border" />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>

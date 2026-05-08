@@ -39,8 +39,6 @@ export default function LoginPage() {
   const hasShownResetToast = useRef(false)
   const db = createClient()
   const { locale, t } = useLanguage()
-  const googleLabel = locale === "uk" ? "Увійти через Google" : "Continue with Google"
-  const orLabel = locale === "uk" ? "або" : "or"
   const resetEmailSent = searchParams.get("reset_email") === "sent"
 
   const appliedEmailFromQuery = useRef(false)
@@ -84,13 +82,9 @@ export default function LoginPage() {
     if (!resetEmailSent || hasShownResetToast.current) return
 
     hasShownResetToast.current = true
-    toast.success(
-      locale === "uk"
-        ? "Лист для скидання пароля успішно надіслано."
-        : "Password reset email sent successfully.",
-    )
+    toast.success(t("auth.login.resetEmailSent"))
     router.replace(pathname)
-  }, [locale, pathname, resetEmailSent, router])
+  }, [pathname, resetEmailSent, router, t])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -156,7 +150,7 @@ export default function LoginPage() {
               />
               <div className="pt-1 text-right">
                 <Link href={`/${locale}/auth/forgot-password`} className="text-xs text-primary hover:underline">
-                  {locale === "uk" ? "Забули пароль?" : "Forgot password?"}
+                  {t("auth.login.forgotPasswordLink")}
                 </Link>
               </div>
             </div>
@@ -169,12 +163,12 @@ export default function LoginPage() {
             >
               <a href="/api/auth/google/start?next=/portal">
                 <GoogleIcon />
-                {googleLabel}
+                {t("auth.login.google")}
               </a>
             </Button>
             <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
-              <span>{orLabel}</span>
+              <span>{t("auth.login.or")}</span>
               <div className="h-px flex-1 bg-border" />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>

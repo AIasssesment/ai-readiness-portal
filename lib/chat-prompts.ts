@@ -2,6 +2,7 @@ import { generateObject } from "ai"
 import { z } from "zod"
 import { createOpenAI } from "@ai-sdk/openai"
 import type { ContextData } from "@/lib/chat-context"
+import { t, type Locale, type TranslationKey } from "@/lib/i18n"
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -15,46 +16,19 @@ const intentSchema = z.object({
 
 export type ChatIntent = z.infer<typeof intentSchema>["type"]
 
-function getTaskInstruction(intent: ChatIntent) {
-  if (intent === "KPI_SUMMARY") {
-    return [
-      "Focus on current performance snapshot.",
-      "Return up to 3 key numbers with short interpretation.",
-      "Add one warning and one high-impact next action.",
-    ].join("\n")
-  }
-
-  if (intent === "RISK_ANALYSIS") {
-    return [
-      "Identify top risks using context evidence only.",
-      "For each risk provide evidence, impact, and one mitigation step.",
-      "If evidence is incomplete, label the item as a hypothesis.",
-    ].join("\n")
-  }
-
-  if (intent === "ACTION_PLAN") {
-    return [
-      "Build a practical 30/60/90-day plan based on available data.",
-      "Each phase should include objective, 2-3 actions, and KPI.",
-      "Do not assume hidden data.",
-    ].join("\n")
-  }
-
-  if (intent === "DATA_GAP") {
-    return [
-      "Respond with 'Недостатньо даних' if context cannot answer the request.",
-      "List exact missing fields/tables needed.",
-      "Suggest the smallest possible data pull to unblock.",
-    ].join("\n")
-  }
-
-  return [
-    "Answer the user question directly and concisely.",
-    "If context is insufficient, switch to 'Недостатньо даних' mode.",
-  ].join("\n")
+const TASK_KEYS: Record<ChatIntent, TranslationKey> = {
+  KPI_SUMMARY: "chat.task.KPI_SUMMARY",
+  RISK_ANALYSIS: "chat.task.RISK_ANALYSIS",
+  ACTION_PLAN: "chat.task.ACTION_PLAN",
+  DATA_GAP: "chat.task.DATA_GAP",
+  GENERAL_QA: "chat.task.GENERAL_QA",
 }
 
-export async function classifyChatIntent(userMessage: string) {
+function getTaskInstruction(intent: ChatIntent, locale: Locale) {
+  return t(locale, TASK_KEYS[intent])
+}
+
+export async function classifyChatIntent(userMessage: string, locale: Locale) {
   const trimmed = userMessage.trim()
   if (!trimmed) {
     return {
@@ -68,11 +42,7 @@ export async function classifyChatIntent(userMessage: string) {
     const result = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: intentSchema,
-      system: [
-        "You classify user prompts for a B2B analytics chat assistant.",
-        "Return JSON only matching the schema.",
-        "Use DATA_GAP when user asks for unavailable or external data.",
-      ].join("\n"),
+      system: t(locale, "chat.classifier.system"),
       prompt: `User message:\n${trimmed}`,
     })
     return result.object
@@ -85,27 +55,31 @@ export async function classifyChatIntent(userMessage: string) {
   }
 }
 
-export function buildSystemPrompt(context: ContextData, intent: ChatIntent, clientId: string) {
-  return `You are an AI copilot for a B2B business portal.
+export function buildSystemPrompt(context: ContextData, intent: ChatIntent, clientId: string, locale: Locale) {
+  const rules = [
+    t(locale, "chat.rule.1"),
+    t(locale, "chat.rule.2"),
+    t(locale, "chat.rule.3"),
+    t(locale, "chat.rule.4"),
+    t(locale, "chat.rule.5"),
+    t(locale, "chat.rule.6"),
+    t(locale, "chat.rule.7"),
+  ].map((line, index) => `${index + 1}) ${line}`)
 
-Hard rules:
-1) Work only with data from the provided CLIENT_CONTEXT.
-2) Never invent facts, metrics, records, or IDs.
-3) If context is insufficient, explicitly say "Недостатньо даних" and list missing fields/tables.
-4) Respect tenant isolation: never reference other clients.
-5) Prefer actionable and measurable recommendations.
-6) Keep answers concise and structured.
-7) Before finalizing, verify each claim is traceable to CLIENT_CONTEXT.
+  return `${t(locale, "chat.system.intro")}
 
-Intent mode: ${intent}
-Task instructions:
-${getTaskInstruction(intent)}
+${t(locale, "chat.hardRules.title")}
+${rules.join("\n")}
 
-Output format:
-1) Поточний стан
-2) Ризики
-3) Можливості
-4) Наступні 3 кроки
+${t(locale, "chat.intentLabel")} ${intent}
+${t(locale, "chat.taskLabel")}
+${getTaskInstruction(intent, locale)}
+
+${t(locale, "chat.outputLabel")}
+1) ${t(locale, "chat.output.1")}
+2) ${t(locale, "chat.output.2")}
+3) ${t(locale, "chat.output.3")}
+4) ${t(locale, "chat.output.4")}
 
 CLIENT_CONTEXT:
 ${JSON.stringify(
@@ -121,6 +95,7 @@ ${JSON.stringify(
     },
     top_opportunities: context.opportunities,
     job_risk: context.jobRisk,
+    insufficient_data_phrase: t(locale, "chat.insufficientData"),
     data_freshness_iso: new Date().toISOString(),
   },
   null,

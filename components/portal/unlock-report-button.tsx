@@ -25,7 +25,6 @@ type UnlockReportButtonProps = {
   mode?: PaymentMode
   returnUrlSuccess?: string
   returnUrlFail?: string
-  /** локальний сценарій для демо без backend */
   simulatePaymentFailure?: boolean
 }
 

@@ -149,8 +149,8 @@ export default function SettingsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="uk">Українська</SelectItem>
+              <SelectItem value="en">{t("settings.language.option.en")}</SelectItem>
+              <SelectItem value="uk">{t("settings.language.option.uk")}</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
@@ -203,7 +203,7 @@ export default function SettingsPage() {
               type="email"
               value={formData.contact_email}
               onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-              placeholder="email@company.com"
+              placeholder={t("settings.contact.emailPlaceholder")}
             />
           </div>
 
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                 <SelectContent>
                   {companySizes.map((size) => (
                     <SelectItem key={size} value={size}>
-                      {locale === "uk" ? `${size} співробітників` : `${size} employees`}
+                      {`${size} ${t("settings.companySize.suffix")}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
