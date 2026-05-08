@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+<<<<<<< HEAD
+=======
+import { createClient } from '@/lib/db-client/client'
+>>>>>>> 6e913c4 (feat(portal): render full ExtendedReport on paid assessment detail page)
 import { useLanguage } from '@/components/language-provider'
 import { LayoutDashboard, LogIn } from 'lucide-react'
 
@@ -12,11 +16,16 @@ interface NavProps {
 
 export function Nav({ onStartAssessment }: NavProps) {
   const { locale, t } = useLanguage()
+<<<<<<< HEAD
+=======
+  const db = useMemo(() => createClient(), [])
+>>>>>>> 6e913c4 (feat(portal): render full ExtendedReport on paid assessment detail page)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
     async function checkAuth() {
+<<<<<<< HEAD
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' })
         const data = (await res.json()) as { user?: unknown }
@@ -29,6 +38,14 @@ export function Nav({ onStartAssessment }: NavProps) {
     window.addEventListener('portal-auth-changed', checkAuth)
     return () => window.removeEventListener('portal-auth-changed', checkAuth)
   }, [])
+=======
+      const { data: { user } } = await db.auth.getUser()
+      setIsLoggedIn(!!user)
+      setIsCheckingAuth(false)
+    }
+    checkAuth()
+  }, [db])
+>>>>>>> 6e913c4 (feat(portal): render full ExtendedReport on paid assessment detail page)
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-12">

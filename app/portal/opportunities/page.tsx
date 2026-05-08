@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/db-client/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,11 +66,11 @@ function getStatusColor(status: string) {
 
 export default async function OpportunitiesPage() {
   const locale = await getServerLocale()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const db = await createClient()
+  const { data: { user } } = await db.auth.getUser()
 
   // Get client
-  const { data: client } = await supabase
+  const { data: client } = await db
     .from("clients")
     .select()
     .eq("user_id", user?.id)
@@ -78,7 +78,7 @@ export default async function OpportunitiesPage() {
   const typedClient = (client ?? null) as unknown as ClientRow | null
 
   // Get all opportunities
-  const { data: rawOpportunities } = await supabase
+  const { data: rawOpportunities } = await db
     .from("opportunities")
     .select()
     .eq("client_id", typedClient?.id)

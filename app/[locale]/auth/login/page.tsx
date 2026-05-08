@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/db-client/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,7 +37,7 @@ export default function LoginPage() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const hasShownResetToast = useRef(false)
-  const supabase = createClient()
+  const db = createClient()
   const { locale, t } = useLanguage()
   const googleLabel = locale === "uk" ? "Увійти через Google" : "Continue with Google"
   const orLabel = locale === "uk" ? "або" : "or"
@@ -97,7 +97,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await db.auth.signInWithPassword({
       email,
       password,
     })

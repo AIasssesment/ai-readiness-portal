@@ -1,4 +1,3 @@
-/** Тіло помилки з `apiErrors` або сумісний формат з рядком `error`. */
 export function parseApiErrorMessage(json: unknown): string | undefined {
   if (!json || typeof json !== "object") return undefined
   const raw = (json as { error?: unknown }).error

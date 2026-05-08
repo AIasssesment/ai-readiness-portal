@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/db-client/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,14 +59,14 @@ export default function SettingsPage() {
     company_size: ""
   })
 
-  const supabase = useMemo(() => createClient(), [])
+  const db = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function loadClient() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await db.auth.getUser()
       if (!user) return
 
-      const { data } = await supabase
+      const { data } = await db
         .from("clients")
         .select()
         .eq("user_id", user.id)
@@ -86,7 +86,7 @@ export default function SettingsPage() {
     }
 
     loadClient()
-  }, [supabase])
+  }, [db])
 
   const handleSave = async () => {
     if (!client) return
@@ -94,7 +94,7 @@ export default function SettingsPage() {
     setSaving(true)
     setSaved(false)
 
-    const { error } = await supabase
+    const { error } = await db
       .from("clients")
       .update({
         company_name: formData.company_name,

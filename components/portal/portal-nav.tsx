@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/db-client/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -71,7 +71,7 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const supabase = createClient()
+  const db = createClient()
   const activeConversationId = searchParams.get("conversationId")
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [renameChatId, setRenameChatId] = useState<string | null>(null)
@@ -100,7 +100,7 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
   ]
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await db.auth.signOut()
     router.push("/")
     router.refresh()
   }
