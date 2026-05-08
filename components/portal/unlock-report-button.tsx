@@ -45,7 +45,6 @@ function toMissingReasons(readiness: ReportReadinessResponse | null, fallback?: 
 }
 
 function logBreadcrumb(event: string, payload: Record<string, unknown>) {
-  // No secrets/tokens in payload.
   console.info(`[payments] ${event}`, payload)
 }
 
@@ -133,6 +132,13 @@ export function UnlockReportButton({
     return true
   }, [mode, reportReady])
 
+  const handleCloseDialog = (next: boolean) => {
+    setOpen(next)
+    if (!next) {
+      setPhase("checkout")
+    }
+  }
+
   const handleCreateInvoice = async () => {
     if (!clientId) {
       setPhase("payment_error")
@@ -161,10 +167,8 @@ export function UnlockReportButton({
       const failPath = assessmentId
         ? `/payment/fail?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
         : `/payment/fail?returnLocale=${encodeURIComponent(locale)}`
-      const successUrl =
-        returnUrlSuccess ?? buildReturnUrl(successPath)
-      const failUrl =
-        returnUrlFail ?? buildReturnUrl(failPath)
+      const successUrl = returnUrlSuccess ?? buildReturnUrl(successPath)
+      const failUrl = returnUrlFail ?? buildReturnUrl(failPath)
 
       const response = await createMonobankInvoice({
         clientId,
@@ -242,11 +246,11 @@ export function UnlockReportButton({
         <ArrowRight className="h-4 w-4" />
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleCloseDialog}>
         <DialogContent className="border-border bg-background sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl">{titleForPhase}</DialogTitle>
-            <DialogDescription>{descriptionForPhase}</DialogDescription>
+            <DialogDescription className="text-muted-foreground">{descriptionForPhase}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5 py-2">

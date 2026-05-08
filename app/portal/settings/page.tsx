@@ -73,13 +73,14 @@ export default function SettingsPage() {
         .single()
 
       if (data) {
-        setClient(data)
+        const row = data as Client
+        setClient(row)
         setFormData({
-          company_name: data.company_name || "",
-          contact_name: data.contact_name || "",
-          contact_email: data.contact_email || "",
-          industry: data.industry || "",
-          company_size: data.company_size || ""
+          company_name: row.company_name || "",
+          contact_name: row.contact_name || "",
+          contact_email: row.contact_email || "",
+          industry: row.industry || "",
+          company_size: row.company_size || ""
         })
       }
       setLoading(false)

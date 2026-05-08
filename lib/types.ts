@@ -31,6 +31,14 @@ export interface DimensionScores {
   size?: number
 }
 
+export interface ReadinessScoreSnapshot {
+  externalScore: number
+  externalConfidence: number
+  fpiScore: number
+  signalCount: number
+  signals: Record<string, number>
+}
+
 export interface AssessmentResults {
   companyInfo: CompanyInfo
   answers: AssessmentAnswer[]
@@ -39,6 +47,7 @@ export interface AssessmentResults {
   tier: 'high' | 'good' | 'early' | 'explore'
   savedAssessmentId?: string
   savedClientId?: string
+  scoring?: ReadinessScoreSnapshot
 }
 
 // Extended Report Metrics (10 metrics from the proposed structure)
