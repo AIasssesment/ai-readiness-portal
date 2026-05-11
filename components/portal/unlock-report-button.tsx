@@ -66,11 +66,16 @@ export function UnlockReportButton({
   const [phase, setPhase] = useState<PurchasePhase>("checkout")
   const [isCheckingReadiness, setIsCheckingReadiness] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isMonoConfirmOpen, setIsMonoConfirmOpen] = useState(false)
   const [readiness, setReadiness] = useState<ReportReadinessResponse | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [missingReasons, setMissingReasons] = useState<string[]>([])
   const { t, locale } = useLanguage()
   const resolvedLabel = label ?? t("unlock.fullReport")
+  const monoTitle = locale === "uk" ? "Рекомендуємо такий варіант:" : "Recommended payment option:"
+  const monoButtonLabel = locale === "uk" ? "Онлайн-оплата карткою" : "Online card payment"
+  const monoBrand = "plata by mono"
+  const backLabel = locale === "uk" ? "Назад" : "Back"
 
   const reportReady = readiness?.reportDataReady ?? false
 
@@ -293,7 +298,7 @@ export function UnlockReportButton({
 
             <Button
               className="h-12 w-full rounded-xl"
-              onClick={() => void handleCreateInvoice()}
+              onClick={() => setIsMonoConfirmOpen(true)}
               disabled={isProcessing || isCheckingReadiness || !canPay}
             >
               {isProcessing ? t("unlock.redirectingToPayment") : t("unlock.completePurchase")}
@@ -310,6 +315,46 @@ export function UnlockReportButton({
                 {t("unlock.tryAgain")}
               </Button>
             ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isMonoConfirmOpen} onOpenChange={setIsMonoConfirmOpen}>
+        <DialogContent className="border-border bg-background sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{monoTitle}</DialogTitle>
+            <DialogDescription>{t("unlock.purchaseDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-xl border border-border p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="h-6 w-6 rounded-full border-2 border-foreground" />
+                  <span className="font-medium">{monoButtonLabel}</span>
+                </div>
+                <span className="rounded-md bg-foreground px-3 py-1 text-sm font-semibold text-background">
+                  {monoBrand}
+                </span>
+              </div>
+            </div>
+            <Button
+              className="h-12 w-full rounded-xl"
+              onClick={() => {
+                setIsMonoConfirmOpen(false)
+                void handleCreateInvoice()
+              }}
+              disabled={isProcessing || isCheckingReadiness || !canPay}
+            >
+              {isProcessing ? t("unlock.redirectingToPayment") : monoButtonLabel}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full rounded-xl"
+              onClick={() => setIsMonoConfirmOpen(false)}
+              disabled={isProcessing}
+            >
+              {backLabel}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
