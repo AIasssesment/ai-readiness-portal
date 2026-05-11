@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
+import type { TranslationKey } from "@/lib/i18n"
 import { localizedHomePath } from "@/lib/locale-path"
+import { toast } from "sonner"
 
 function GoogleIcon() {
   return (
@@ -32,8 +34,58 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const hasShownResetToast = useRef(false)
   const supabase = createClient()
   const { locale, t } = useLanguage()
+
+  const resetEmailSent = searchParams.get("reset_email") === "sent"
+
+  const appliedEmailFromQuery = useRef(false)
+  useEffect(() => {
+    const fromQuery = searchParams.get("email")?.trim()
+    if (fromQuery && !appliedEmailFromQuery.current) {
+      appliedEmailFromQuery.current = true
+      setEmail(fromQuery)
+    }
+  }, [searchParams])
+
+  const oauthErrorShown = useRef(false)
+  useEffect(() => {
+    const code = searchParams.get("oauth_error")
+    if (!code || oauthErrorShown.current) return
+    oauthErrorShown.current = true
+
+    const known: Record<string, TranslationKey> = {
+      google_denied: "auth.login.oauth.google_denied",
+      invalid_state: "auth.login.oauth.invalid_state",
+      missing_code: "auth.login.oauth.missing_code",
+      missing_token: "auth.login.oauth.missing_token",
+      missing_client_id: "auth.login.oauth.missing_client_id",
+      oauth_failed: "auth.login.oauth.oauth_failed",
+    }
+    const key = known[code]
+    const message = key ? t(key) : `${locale === "uk" ? "Помилка Google OAuth" : "Google OAuth error"} (${code})`
+    const fullMessage = `${message} ${t("auth.login.oauth.hintServer")}`
+
+    console.warn("[google-oauth client] oauth_error=", code, "— server logs: Vercel → Deployment → Logs, filter [google-oauth]")
+    setError(fullMessage)
+    toast.error(message, { duration: 12_000 })
+
+    const next = new URLSearchParams(searchParams.toString())
+    next.delete("oauth_error")
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname)
+  }, [locale, pathname, router, searchParams, t])
+
+  useEffect(() => {
+    if (!resetEmailSent || hasShownResetToast.current) return
+
+    hasShownResetToast.current = true
+    toast.success(t("auth.login.resetEmailSent"))
+    router.replace(pathname)
+  }, [pathname, resetEmailSent, router, t])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
