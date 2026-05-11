@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { cn, normalizeCompanyWebsiteInput } from '@/lib/utils'
 
 import { useAssessmentStore } from '@/lib/assessment-store'
 import type { CompanyInfo } from '@/lib/types'
@@ -33,7 +33,9 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.companyName.trim()) {
+    const companyWebsite = normalizeCompanyWebsiteInput(formData.companyName)
+
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !companyWebsite) {
       setError(t('companyForm.errorRequired'))
       return
     }
@@ -55,7 +57,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           email: formData.email.trim(),
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
-          companyName: formData.companyName.trim(),
+          companyName: companyWebsite,
           locale,
         }),
       })
@@ -80,7 +82,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
 
       toast.success(t('companyForm.accountCreatedToast'))
       window.dispatchEvent(new Event('portal-auth-changed'))
-      setCompanyInfo(formData)
+      setCompanyInfo({ ...formData, companyName: companyWebsite })
     } catch {
       setError(t('companyForm.provisionFailed'))
     } finally {
@@ -171,7 +173,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           <Input
             id="companyUrl"
             name="url"
-            type="url"
+            type="text"
             autoComplete="url"
             inputMode="url"
             placeholder="https://company.com"
