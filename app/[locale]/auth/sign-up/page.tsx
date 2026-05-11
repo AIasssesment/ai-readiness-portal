@@ -141,10 +141,10 @@ export default function SignUpPage() {
               variant="outline"
               className="w-full justify-center gap-2 text-foreground hover:text-foreground"
             >
-              <Link href="/api/auth/google/start?next=/portal">
+              <a href="/api/auth/google/start?next=/portal">
                 <GoogleIcon />
                 {googleLabel}
-              </Link>
+              </a>
             </Button>
             <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
