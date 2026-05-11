@@ -144,7 +144,7 @@ export default function SignUpPage() {
               <a href="/api/auth/google/start?next=/portal">
                 <GoogleIcon />
                 {googleLabel}
-              </a>
+              </a> 
             </Button>
             <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
