@@ -32,7 +32,7 @@ function toDimensionString(scores: Record<string, number>) {
 export async function getChatContext(clientId: string): Promise<ContextData> {
   const clients = await sql<Array<{ company_name: string; industry: string | null; company_size: string | null }>>`
     select company_name, industry, company_size
-    from clients 
+    from clients
     where id = ${clientId}
     limit 1
   `
