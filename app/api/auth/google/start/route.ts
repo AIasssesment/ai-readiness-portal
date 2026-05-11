@@ -40,17 +40,6 @@ export async function GET(request: NextRequest) {
   const redirectUri =
     process.env.GOOGLE_REDIRECT_URI ?? `${url.origin}/api/auth/google/callback`
 
-  console.log(
-    "[google-oauth]",
-    "start_redirect",
-    JSON.stringify({
-      origin: url.origin,
-      nextPath,
-      redirectUriHost: new URL(redirectUri).host,
-      usingEnvRedirectUri: Boolean(process.env.GOOGLE_REDIRECT_URI),
-    }),
-  )
-
   const state = base64Url(randomBytes(32))
   const verifier = makeCodeVerifier()
   const challenge = makeCodeChallenge(verifier)
