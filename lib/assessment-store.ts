@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import type { CompanyInfo, AssessmentAnswer, AssessmentResults, ExtendedReportData, DimensionScores } from './types'
-import { ASSESSMENT_QUESTIONS } from './assessment-data'
+import { ASSESSMENT_QUESTIONS, ADVICE_MAP } from './assessment-data'
 
 interface AssessmentStore {
   // Form state
@@ -36,65 +36,20 @@ function calculateDimensionScore(dimension: string, answers: AssessmentAnswer[])
     const answer = answers.find((a) => a.questionId === q.id)
     const maxScore = Math.max(...q.options.map((o) => o.value))
     maxTotal += maxScore
-    if (answer) {
-      total += answer.value
+    if (answer !== undefined && answer.value < q.options.length) {
+      // answer.value is the option index, look up the actual score value
+      total += q.options[answer.value].value
     }
   })
   
   return Math.round((total / maxTotal) * 100)
 }
 
-function getTierInfo(score: number): { tier: 'high' | 'good' | 'early' | 'explore' } {
-  if (score >= 75) return { tier: 'high' }
-  if (score >= 60) return { tier: 'good' }
-  if (score >= 45) return { tier: 'early' }
-  return { tier: 'explore' }
-}
-
-// Convert tier to readiness level for database
-function tierToReadinessLevel(tier: string): string {
-  switch (tier) {
-    case 'high': return 'leader'
-    case 'good': return 'advanced'
-    case 'early': return 'developing'
-    case 'explore': return 'emerging'
-    default: return 'emerging'
-  }
-}
-
-// Save assessment to database
-async function saveAssessmentToDatabase(results: AssessmentResults, extendedReport: ExtendedReportData) {
-  try {
-    const opportunities = extendedReport.automationOpportunities.map(opp => ({
-      title: opp.process,
-      description: `Automate ${opp.process} in ${opp.department}`,
-      department: opp.department,
-      complexity: opp.implementation === 'quick-win' ? 'low' : opp.implementation === 'medium-term' ? 'medium' : 'high',
-      estimated_hours_saved_weekly: parseInt(opp.currentEffort.split('-')[0]) || 10,
-      estimated_annual_savings: Math.round(extendedReport.costBenefit.projectedSavings / extendedReport.automationOpportunities.length),
-      priority: opp.automationPotential >= 80 ? 'high' : opp.automationPotential >= 60 ? 'medium' : 'low',
-      implementation_timeline: opp.implementation === 'quick-win' ? '1-2 weeks' : opp.implementation === 'medium-term' ? '1-2 months' : '3-6 months'
-    }))
-
-    const response = await fetch('/api/assessments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        overallScore: results.overallScore,
-        readinessLevel: tierToReadinessLevel(results.tier),
-        dimensionScores: results.dimensionScores,
-        answers: results.answers,
-        companyInfo: results.companyInfo,
-        opportunities
-      })
-    })
-
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Failed to save assessment:', error)
-    return null
-  }
+function getTierInfo(score: number): { tier: 'high' | 'good' | 'early' | 'explore'; label: string } {
+  if (score >= 75) return { tier: 'high', label: 'High Readiness - Ready to Start' }
+  if (score >= 60) return { tier: 'good', label: 'Good Potential - Nearly There' }
+  if (score >= 45) return { tier: 'early', label: 'Early Stage - Foundation Needed' }
+  return { tier: 'explore', label: 'Exploratory - Just Getting Started' }
 }
 
 function generateExtendedReport(results: AssessmentResults): ExtendedReportData {
@@ -461,12 +416,11 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
         overallScore,
         dimensionScores,
         tier: tierInfo.tier,
+        tierLabel: tierInfo.label,
+        advice: ADVICE_MAP[tierInfo.tier],
       }
       
       const extendedReport = generateExtendedReport(results)
-      
-      // Save to database (async, don't block UI)
-      saveAssessmentToDatabase(results, extendedReport)
       
       set({ results, extendedReport, step: 'results' })
     }, 3000)

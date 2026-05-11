@@ -5,11 +5,8 @@ import { Button } from '@/components/ui/button'
 import { useAssessmentStore } from '@/lib/assessment-store'
 import { ASSESSMENT_QUESTIONS } from '@/lib/assessment-data'
 import { cn } from '@/lib/utils'
-import { useLanguage } from '@/components/language-provider'
-import type { TranslationKey } from '@/lib/i18n'
 
 export function QuestionCard() {
-  const { t } = useLanguage()
   const { 
     currentQuestionIndex, 
     answers, 
@@ -24,10 +21,8 @@ export function QuestionCard() {
   const progress = Math.round((currentQuestionIndex / ASSESSMENT_QUESTIONS.length) * 100)
   const isLastQuestion = currentQuestionIndex === ASSESSMENT_QUESTIONS.length - 1
   
-  const handleOptionSelect = (e: React.MouseEvent, value: number) => {
-    e.preventDefault()
-    e.stopPropagation()
-    answerQuestion(question.id, value)
+  const handleOptionSelect = (optionIndex: number) => {
+    answerQuestion(question.id, optionIndex)
   }
   
   const handleNext = () => {
@@ -41,10 +36,10 @@ export function QuestionCard() {
   return (
     <section className="animate-in fade-in slide-in-from-bottom-4 px-6 py-20 border-t border-border bg-secondary">
       <p className="mb-3 text-center text-xs font-semibold uppercase tracking-widest text-primary">
-        {t('assessment.flow.step2Badge')}
+        Step 2 of 2 - Assessment
       </p>
-      <h2 className="mb-10 text-center font-[family-name:var(--font-syne)] text-3xl font-extrabold tracking-tight sm:text-4xl">
-        {t('assessment.flow.mainTitle')}
+      <h2 className="mb-10 text-center font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight sm:text-4xl">
+        RPA Readiness Assessment
       </h2>
       
       <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-background p-8 md:p-12">
@@ -56,14 +51,12 @@ export function QuestionCard() {
           />
         </div>
         <p className="mb-10 text-center text-sm text-muted-foreground">
-          {t('assessment.flow.questionProgress')
-            .replace('{current}', String(currentQuestionIndex + 1))
-            .replace('{total}', String(ASSESSMENT_QUESTIONS.length))}
+          Question {currentQuestionIndex + 1} of {ASSESSMENT_QUESTIONS.length}
         </p>
         
         {/* Question */}
-        <h3 className="mb-7 font-[family-name:var(--font-syne)] text-xl font-semibold leading-relaxed">
-          {currentQuestionIndex + 1}. {t(`assessment.${question.id}.q` as TranslationKey)}
+        <h3 className="mb-7 font-[family-name:var(--font-display)] text-xl font-semibold leading-relaxed">
+          {currentQuestionIndex + 1}. {question.question}
         </h3>
         
         {/* Options */}
@@ -71,11 +64,10 @@ export function QuestionCard() {
           {question.options.map((option, index) => (
             <button
               key={index}
-              type="button"
-              onClick={(e) => handleOptionSelect(e, option.value)}
+              onClick={() => handleOptionSelect(index)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl border-2 bg-secondary px-5 py-4 text-left text-[15px] transition-all",
-                currentAnswer?.value === option.value
+                currentAnswer?.value === index
                   ? "border-primary bg-primary/10"
                   : "border-border hover:border-primary/40"
               )}
@@ -83,12 +75,12 @@ export function QuestionCard() {
               <span 
                 className={cn(
                   "h-[18px] w-[18px] shrink-0 rounded-full border-2 transition-colors",
-                  currentAnswer?.value === option.value
+                  currentAnswer?.value === index
                     ? "border-primary bg-primary"
                     : "border-border"
                 )}
               />
-              {t(`assessment.${question.id}.o${index + 1}` as TranslationKey)}
+              {option.label}
             </button>
           ))}
         </div>
@@ -102,15 +94,15 @@ export function QuestionCard() {
               className="h-12 gap-2 rounded-xl border-border px-8 hover:border-muted-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              {t('assessment.flow.back')}
+              Back
             </Button>
           )}
           <Button
             onClick={handleNext}
             disabled={!currentAnswer}
-            className="h-12 gap-2 rounded-xl bg-primary px-12 font-[family-name:var(--font-syne)] font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+            className="h-12 gap-2 rounded-xl bg-primary px-12 font-[family-name:var(--font-display)] font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
-            {isLastQuestion ? t('assessment.flow.seeResults') : t('assessment.flow.continue')}
+            {isLastQuestion ? 'See Results' : 'Continue'}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

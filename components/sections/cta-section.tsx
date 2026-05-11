@@ -1,50 +1,52 @@
-'use client'
+import { Button } from "@/components/ui/button"
+import { CheckCircle } from "lucide-react"
 
-import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/components/language-provider'
-
-interface CtaSectionProps {
-  onStartAssessment: () => void
-}
-
-export function CtaSection({ onStartAssessment }: CtaSectionProps) {
-  const { t } = useLanguage()
+export function CtaSection() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
   return (
-    <section className="relative overflow-hidden border-t border-border px-6 py-24 text-center">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-90"
-        style={{
-          background:
-            'radial-gradient(ellipse 55% 45% at 50% 55%, rgba(45,212,191,0.14) 0%, transparent 70%)',
-        }}
-      />
-      <div className="relative z-10">
-        <h2 className="mx-auto mb-4 max-w-3xl font-[family-name:var(--font-syne)] text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          {t('landing.cta.title')}
+    <section className="relative overflow-hidden px-6 py-20">
+      {/* Background effects */}
+      <div className="pointer-events-none absolute inset-0">
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,212,165,0.12) 0%, transparent 70%)'
+          }}
+        />
+      </div>
+      
+      <div className="relative mx-auto max-w-3xl text-center">
+        <h2 className="mb-4 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Ready to Know Your RPA Readiness?
         </h2>
-        <p className="mx-auto mb-10 max-w-xl text-muted-foreground">
-          {t('landing.cta.subtitle')}
+        <p className="mx-auto mb-8 max-w-xl text-muted-foreground">
+          Find out your score in 3 minutes. No fluff, no sales call - just real 
+          insight into whether automation can save you time and money.
         </p>
-        <Button
-          onClick={onStartAssessment}
+        
+        <Button 
+          onClick={scrollToTop}
           size="lg"
-          className="h-auto rounded-xl border-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-12 py-5 font-[family-name:var(--font-syne)] text-lg font-bold text-zinc-950 shadow-[0_0_32px_-4px_rgba(45,212,191,0.6)] transition hover:brightness-105 hover:shadow-[0_0_44px_-2px_rgba(45,212,191,0.75)]"
+          className="mb-8 h-auto rounded-xl bg-primary px-12 py-5 font-[family-name:var(--font-display)] text-lg font-bold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/40"
         >
-          {t('landing.cta.button')}
+          Start Free Assessment
         </Button>
-        <div className="mx-auto mt-8 flex max-w-lg flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary">✓</span>
-            {t('landing.cta.point1')}
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary">✓</span>
-            {t('landing.cta.point2')}
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary">✓</span>
-            {t('landing.cta.point3')}
-          </span>
+        
+        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-primary" />
+            16 quick questions
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-primary" />
+            Personalized score
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-primary" />
+            Matched experts
+          </div>
         </div>
       </div>
     </section>

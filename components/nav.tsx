@@ -1,71 +1,59 @@
-'use client'
+"use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { useLanguage } from '@/components/language-provider'
-import { LayoutDashboard, LogIn } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { useAssessmentStore } from "@/lib/assessment-store"
 
-interface NavProps {
-  onStartAssessment: () => void
-}
+export function Nav() {
+  const step = useAssessmentStore((state) => state.step)
+  const setStep = useAssessmentStore((state) => state.setStep)
+  const reset = useAssessmentStore((state) => state.reset)
 
-export function Nav({ onStartAssessment }: NavProps) {
-  const { locale, t } = useLanguage()
-  const supabase = useMemo(() => createClient(), [])
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const handleLogoClick = () => {
+    reset()
+  }
 
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
-      setIsCheckingAuth(false)
-    }
-    checkAuth()
-  }, [supabase])
+  const handleCtaClick = () => {
+    setStep("info")
+  }
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-12">
-      <div className="font-[family-name:var(--font-syne)] text-xl font-extrabold tracking-tight text-primary">
-        RPA Community
-      </div>
-      <div className="flex items-center gap-2 sm:gap-3">
-        {!isCheckingAuth && (
-          <>
-            {isLoggedIn ? (
-              <Link href="/portal">
-                <Button variant="outline" size="sm" className="gap-2 rounded-lg">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('nav.myPortal')}</span>
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link href={`/${locale}/auth/login`}>
-                  <Button variant="ghost" size="sm" className="gap-2 rounded-lg">
-                    <LogIn className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('nav.signIn')}</span>
-                  </Button>
-                </Link>
-                <Link href={`/${locale}/auth/sign-up`}>
-                  <Button variant="outline" size="sm" className="rounded-lg">
-                    <span className="hidden sm:inline">{t('nav.getStarted')}</span>
-                    <span className="sm:hidden">{t('nav.signUpShort')}</span>
-                  </Button>
-                </Link>
-              </>
-            )}
-          </>
-        )}
+      <button
+        onClick={handleLogoClick}
+        className="flex items-center gap-2 font-[family-name:var(--font-display)] text-xl font-extrabold tracking-tight text-primary transition-opacity hover:opacity-80"
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+          R
+        </div>
+        <span className="hidden sm:inline">RPA Community</span>
+      </button>
+
+      {step === "landing" && (
         <Button
-          onClick={onStartAssessment}
-          className="rounded-lg bg-primary px-4 py-2 font-[family-name:var(--font-syne)] text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:px-5"
+          onClick={handleCtaClick}
+          className="rounded-lg bg-primary px-5 py-2 font-[family-name:var(--font-display)] text-sm font-bold text-primary-foreground hover:bg-primary/90"
         >
-          {t('nav.applyNow')}
+          Start Assessment
         </Button>
-      </div>
+      )}
+
+      {step !== "landing" && step !== "results" && (
+        <div className="text-sm text-muted-foreground">
+          {step === "info" && "Step 1: Company Info"}
+          {step === "questions" && "Step 2: Assessment"}
+          {step === "analyzing" && "Analyzing..."}
+        </div>
+      )}
+
+      {step === "results" && (
+        <Button
+          onClick={reset}
+          variant="outline"
+          className="rounded-lg border-primary/30 font-[family-name:var(--font-display)] text-sm font-semibold text-primary hover:bg-primary/10"
+        >
+          New Assessment
+        </Button>
+      )}
     </nav>
   )
 }

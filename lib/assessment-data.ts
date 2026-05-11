@@ -203,6 +203,21 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
   },
 ]
 
+export const DIMENSION_NAMES: Record<string, string> = {
+  process: 'Process Fit',
+  tech: 'Tech Stack',
+  org: 'Org Readiness',
+  roi: 'ROI Potential',
+  size: 'Scale Factor',
+}
+
+export const ADVICE_MAP: Record<string, string> = {
+  high: "You're well-positioned to start immediately. A Ukrainian RPA team can have your first bots live within 4-6 weeks.",
+  good: "Strong foundations in place. A few quick wins in process documentation will unlock your full potential.",
+  early: "Good starting point. Focus on your top 3 repetitive processes - that's where the biggest ROI lives.",
+  explore: "Every automation journey starts somewhere. Our experts can help you identify the right first step.",
+}
+
 export const TESTIMONIALS = [
   {
     quote: "We went from processing 75 invoices a day to over 500. The Ukrainian team had bots live in 6 weeks. I didn't think it was possible at that speed.",
