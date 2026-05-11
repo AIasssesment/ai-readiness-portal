@@ -10,6 +10,10 @@ const OAUTH_NEXT_COOKIE = "oauth_google_next"
 
 const googleJwks = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"))
 
+function oauthLog(step: string, data?: Record<string, unknown>) {
+  console.log("[google-oauth]", step, data ? JSON.stringify(data) : "")
+}
+
 type GoogleIdTokenClaims = {
   sub: string
   email: string
@@ -18,6 +22,7 @@ type GoogleIdTokenClaims = {
 }
 
 function loginRedirect(request: NextRequest, reason: string) {
+  oauthLog("redirect_login", { reason })
   const locale = request.cookies.get(LOCALE_COOKIE_NAME)?.value === "uk" ? "uk" : "en"
   return NextResponse.redirect(`${request.nextUrl.origin}/${locale}/auth/login?oauth_error=${reason}`)
 }
@@ -44,10 +49,16 @@ async function fetchGoogleTokens(code: string, redirectUri: string, codeVerifier
 
   if (!tokenResponse.ok) {
     const details = await tokenResponse.text()
+    oauthLog("token_exchange_http_error", {
+      status: tokenResponse.status,
+      detailsPreview: details.slice(0, 400),
+    })
     throw new Error(`Token exchange failed: ${details}`)
   }
 
-  return (await tokenResponse.json()) as { id_token?: string }
+  const json = (await tokenResponse.json()) as { id_token?: string }
+  oauthLog("token_exchange_ok", { hasIdToken: Boolean(json.id_token) })
+  return json
 }
 
 async function verifyGoogleIdToken(idToken: string, audience: string) {
@@ -77,6 +88,13 @@ async function ensureUserAndIdentity(claims: GoogleIdTokenClaims) {
     `
 
     let userId = identityRows[0]?.user_id
+    let userSource: "existing_google_identity" | "existing_email" | "new_app_user" | "unknown" = "unknown"
+
+    if (userId) {
+      userSource = "existing_google_identity"
+      oauthLog("db_identity_hit", { userId, email: claims.email })
+    }
+
     if (!userId) {
       const existingUser = await tx<Array<{ id: string }>>`
         select id
@@ -86,6 +104,8 @@ async function ensureUserAndIdentity(claims: GoogleIdTokenClaims) {
       `
       if (existingUser[0]) {
         userId = existingUser[0].id
+        userSource = "existing_email"
+        oauthLog("db_user_by_email", { userId, email: claims.email })
       } else {
         const createdUsers = await tx<Array<{ id: string }>>`
           insert into app_users (email, full_name)
@@ -93,7 +113,14 @@ async function ensureUserAndIdentity(claims: GoogleIdTokenClaims) {
           returning id
         `
         userId = createdUsers[0]?.id
+        userSource = "new_app_user"
+        oauthLog("db_user_inserted", { userId: userId ?? null, email: claims.email })
       }
+    }
+
+    if (!userId) {
+      oauthLog("db_fatal_no_user_id", { email: claims.email, userSource })
+      throw new Error("Failed to resolve user id after Google sign-in")
     }
 
     await tx`
@@ -102,6 +129,7 @@ async function ensureUserAndIdentity(claims: GoogleIdTokenClaims) {
       on conflict (provider, provider_user_id)
       do update set email = excluded.email
     `
+    oauthLog("db_auth_identity_upserted", { userId, googleSub: claims.sub })
 
     const existingClient = await tx<Array<{ id: string }>>`
       select id
@@ -114,13 +142,23 @@ async function ensureUserAndIdentity(claims: GoogleIdTokenClaims) {
         insert into clients (user_id, company_name, contact_name, contact_email)
         values (${userId}, ${claims.name ?? "New Company"}, ${claims.name ?? null}, ${claims.email})
       `
+      oauthLog("db_client_inserted", { userId })
+    } else {
+      oauthLog("db_client_exists", { userId, clientId: existingClient[0].id })
     }
 
+    oauthLog("ensure_user_done", { userId, email: claims.email, userSource })
     return { id: userId, email: claims.email }
   })
 }
 
 export async function GET(request: NextRequest) {
+  oauthLog("callback_hit", {
+    origin: request.nextUrl.origin,
+    hasCode: Boolean(request.nextUrl.searchParams.get("code")),
+    hasState: Boolean(request.nextUrl.searchParams.get("state")),
+  })
+
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
@@ -132,6 +170,13 @@ export async function GET(request: NextRequest) {
   const savedState = request.cookies.get(OAUTH_STATE_COOKIE)?.value
   const verifier = request.cookies.get(OAUTH_VERIFIER_COOKIE)?.value
   const nextPath = request.cookies.get(OAUTH_NEXT_COOKIE)?.value || "/portal"
+  oauthLog("callback_cookies", {
+    hasSavedState: Boolean(savedState),
+    hasVerifier: Boolean(verifier),
+    stateMatch: Boolean(savedState && state && savedState === state),
+    nextPath,
+  })
+
   if (!savedState || !verifier || savedState !== state) {
     return loginRedirect(request, "invalid_state")
   }
@@ -139,8 +184,14 @@ export async function GET(request: NextRequest) {
   try {
     const redirectUri =
       process.env.GOOGLE_REDIRECT_URI ?? `${request.nextUrl.origin}/api/auth/google/callback`
+    oauthLog("callback_try", {
+      redirectUriHost: new URL(redirectUri).host,
+      usingEnvRedirectUri: Boolean(process.env.GOOGLE_REDIRECT_URI),
+    })
+
     const tokens = await fetchGoogleTokens(code, redirectUri, verifier)
     if (!tokens.id_token) {
+      oauthLog("callback_abort", { reason: "missing_id_token" })
       return loginRedirect(request, "missing_token")
     }
 
@@ -149,15 +200,26 @@ export async function GET(request: NextRequest) {
       return loginRedirect(request, "missing_client_id")
     }
     const claims = await verifyGoogleIdToken(tokens.id_token, clientId)
+    oauthLog("id_token_ok", {
+      email: claims.email,
+      emailVerified: claims.email_verified !== false,
+      hasSub: Boolean(claims.sub),
+    })
+
     const user = await ensureUserAndIdentity(claims)
     await createSession(user)
+    oauthLog("session_created", { userId: user.id, email: user.email })
 
-    const response = NextResponse.redirect(`${request.nextUrl.origin}${nextPath}`)
+    const redirectTo = `${request.nextUrl.origin}${nextPath}`
+    oauthLog("callback_success_redirect", { redirectTo })
+    const response = NextResponse.redirect(redirectTo)
     response.cookies.delete(OAUTH_STATE_COOKIE)
     response.cookies.delete(OAUTH_VERIFIER_COOKIE)
     response.cookies.delete(OAUTH_NEXT_COOKIE)
     return response
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    oauthLog("callback_catch", { message: message.slice(0, 500) })
     console.error("google oauth callback error", e)
     return loginRedirect(request, "oauth_failed")
   }
