@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
+import { normalizeCompanyWebsiteInput } from "@/lib/utils"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -27,15 +28,14 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError(null)
 
+    const companyWebsite = normalizeCompanyWebsiteInput(companyName)
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo:
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-          `${window.location.origin}/auth/callback`,
         data: {
-          company_name: companyName,
+          company_name: companyWebsite,
           contact_name: contactName,
         },
       },
@@ -83,10 +83,12 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyName">{t("auth.signup.companyName")}</Label>
+              <Label htmlFor="companyUrl">{t("auth.signup.companyName")}</Label>
               <Input
-                id="companyName"
+                id="companyUrl"
                 type="text"
+                autoComplete="url"
+                inputMode="url"
                 placeholder={t("auth.signup.companyNamePlaceholder")}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
