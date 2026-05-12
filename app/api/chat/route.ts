@@ -6,6 +6,7 @@ import { sql } from "@/lib/db"
 import { getChatContext } from "@/lib/chat-context"
 import { buildSystemPrompt, classifyChatIntent } from "@/lib/chat-prompts"
 import { apiErrors } from "@/lib/http/api-errors"
+import { getServerLocale } from "@/lib/i18n-server"
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -97,8 +98,9 @@ export async function POST(request: Request) {
       .trim()
 
     const context = await getChatContext(clientId)
-    const intent = await classifyChatIntent(latestUserText ?? "")
-    const system = buildSystemPrompt(context, intent.type, clientId)
+    const locale = await getServerLocale()
+    const intent = await classifyChatIntent(latestUserText ?? "", locale)
+    const system = buildSystemPrompt(context, intent.type, clientId, locale)
 
     const url = new URL(request.url)
     let conversationId = body.conversationId ?? url.searchParams.get("conversationId") ?? undefined

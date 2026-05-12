@@ -1,5 +1,5 @@
 import { unauthorized } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/db-client/server"
 import { PortalNav } from "@/components/portal/portal-nav"
 import { MobilePortalNav } from "@/components/portal/mobile-portal-nav"
 import { LanguageProvider } from "@/components/language-provider"
@@ -24,15 +24,15 @@ export default async function PortalLayout({
   children: React.ReactNode
 }) {
   const locale = await getServerLocale()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const db = await createClient()
+  const { data: { user } } = await db.auth.getUser()
 
   if (!user) {
     unauthorized()
   }
 
   // Get client info
-  const { data: client } = await supabase
+  const { data: client } = await db
     .from("clients")
     .select()
     .eq("user_id", user.id)

@@ -13,7 +13,7 @@ import { useLanguage } from '@/components/language-provider'
 
 export function ResultsPage() {
   const { locale } = useLanguage()
-  const { hasPurchasedExtended, reset } = useAssessmentStore()
+  const { hasPurchasedExtended, reset, results, purchaseExtendedReport } = useAssessmentStore()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
@@ -30,6 +30,26 @@ export function ResultsPage() {
     window.addEventListener('portal-auth-changed', checkAuth)
     return () => window.removeEventListener('portal-auth-changed', checkAuth)
   }, [])
+  const paymentTestMode = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true'
+
+  useEffect(() => {
+    if (!paymentTestMode || hasPurchasedExtended || !results?.savedAssessmentId || typeof document === 'undefined') return
+
+    const key = 'test_paid_assessment_ids'
+    const raw = document.cookie
+      .split('; ')
+      .find((part) => part.startsWith(`${key}=`))
+      ?.split('=')[1]
+    const decoded = raw ? decodeURIComponent(raw) : ''
+    const paidIds = decoded
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean)
+
+    if (paidIds.includes(results.savedAssessmentId)) {
+      purchaseExtendedReport()
+    }
+  }, [hasPurchasedExtended, paymentTestMode, purchaseExtendedReport, results?.savedAssessmentId])
 
   return (
     <div className="space-y-8">

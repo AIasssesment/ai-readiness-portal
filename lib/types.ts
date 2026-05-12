@@ -39,6 +39,8 @@ export interface AssessmentResults {
   overallScore: number
   dimensionScores: DimensionScores
   tier: 'high' | 'good' | 'early' | 'explore'
+  savedAssessmentId?: string
+  savedClientId?: string
 }
 
 // Extended Report Metrics (10 metrics from the proposed structure)

@@ -28,6 +28,12 @@ export default function Error({
           Something went wrong while loading this screen. It may be a temporary problem on our side or with the
           network. If the problem continues, try again in a few minutes.
         </p>
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+          <Button type="button" onClick={() => window.location.reload()} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Reload page
+          </Button>
+        </div>
       </div>
     </main>
   )

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { sql } from "@/lib/db"
 import { apiErrors } from "@/lib/http/api-errors"
+import { t } from "@/lib/i18n"
 
 const RESET_TOKEN_TTL_MINUTES = 60
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { email?: string; locale?: "en" | "uk" }
     const email = String(body.email ?? "").trim().toLowerCase()
-    const locale = body.locale === "uk" ? "uk" : "en"
+    const locale = body.locale === "uk" ? ("uk" as const) : ("en" as const)
 
     if (!email) {
       return apiErrors.badRequest("Email is required")
@@ -56,26 +57,18 @@ export async function POST(request: Request) {
       if (!resend || !process.env.MAIL_FROM) {
         console.error("Forgot-password email is not configured: missing RESEND_API_KEY or MAIL_FROM")
       } else {
-        const subject =
-          locale === "uk"
-            ? "Скидання пароля для AI Readiness Portal"
-            : "Reset your AI Readiness Portal password"
-        const buttonLabel = locale === "uk" ? "Скинути пароль" : "Reset password"
-        const intro =
-          locale === "uk"
-            ? "Ми отримали запит на скидання пароля."
-            : "We received a request to reset your password."
-          const outro =
-            locale === "uk"
-          ? "Якщо ви не надсилали цей запит, просто проігноруйте лист."
-          : "If you didn’t request this, you can safely ignore this email."
-      
-            await resend.emails.send({
-              from: process.env.MAIL_FROM!,
-              to: email,
-              subject,
-              text: `${intro}\n\n${buttonLabel}: ${resetUrl}\n\n${outro}`,
-              html: `
+        const subject = t(locale, "email.forgotPassword.subject")
+        const buttonLabel = t(locale, "email.forgotPassword.button")
+        const intro = t(locale, "email.forgotPassword.intro")
+        const outro = t(locale, "email.forgotPassword.outro")
+        const validityHint = t(locale, "email.forgotPassword.validityHint")
+
+        await resend.emails.send({
+          from: process.env.MAIL_FROM!,
+          to: email,
+          subject,
+          text: `${intro}\n\n${buttonLabel}: ${resetUrl}\n\n${outro}`,
+          html: `
                 <div style="font-family: Inter, Arial, sans-serif; background:#f6f7fb; padding:24px;">
                   <table width="100%" cellspacing="0" cellpadding="0" style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; padding:24px; border:1px solid #e8e8ef;">
                     <tr>
@@ -98,14 +91,14 @@ export async function POST(request: Request) {
                     </tr>
                     <tr>
                       <td style="font-size:12px; color:#6b7280; line-height:1.5;">
-                        ${locale === "uk" ? "Посилання дійсне 60 хвилин." : "This link is valid for 60 minutes."}<br/>
+                        ${validityHint}<br/>
                         ${outro}
                       </td>
                     </tr>
                   </table>
                 </div>
               `,
-            })
+        })
       }
     }
 

@@ -12,7 +12,7 @@ import { useLanguage } from "@/components/language-provider"
 import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
 
 export default function ResetPasswordPage() {
-  const { locale } = useLanguage()
+  const { locale, t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = useMemo(() => searchParams.get("token") ?? "", [searchParams])
@@ -22,26 +22,20 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const title = locale === "uk" ? "Новий пароль" : "Set new password"
-  const subtitle =
-    locale === "uk"
-      ? "Введіть новий пароль для вашого акаунта."
-      : "Enter a new password for your account."
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
 
     if (!token) {
-      setError(locale === "uk" ? "Токен скидання відсутній." : "Reset token is missing.")
+      setError(t("auth.resetPassword.tokenMissing"))
       return
     }
     if (password.length < 6) {
-      setError(locale === "uk" ? "Пароль має бути від 6 символів." : "Password must be at least 6 characters.")
+      setError(t("auth.resetPassword.passwordMin"))
       return
     }
     if (password !== confirmPassword) {
-      setError(locale === "uk" ? "Паролі не співпадають." : "Passwords do not match.")
+      setError(t("auth.resetPassword.passwordMismatch"))
       return
     }
 
@@ -54,12 +48,12 @@ export default function ResetPasswordPage() {
       })
       const payload = (await response.json()) as unknown
       if (!response.ok) {
-        setError(parseApiErrorMessage(payload) || (locale === "uk" ? "Не вдалося змінити пароль." : "Failed to reset password."))
+        setError(parseApiErrorMessage(payload) || t("auth.resetPassword.errorApi"))
         return
       }
       setIsSuccess(true)
     } catch {
-      setError(locale === "uk" ? "Помилка запиту." : "Request failed.")
+      setError(t("auth.resetPassword.errorRequest"))
     } finally {
       setIsLoading(false)
     }
@@ -74,8 +68,8 @@ export default function ResetPasswordPage() {
               <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">{title}</CardTitle>
-          <CardDescription>{subtitle}</CardDescription>
+          <CardTitle className="text-2xl">{t("auth.resetPassword.title")}</CardTitle>
+          <CardDescription>{t("auth.resetPassword.subtitle")}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           {isSuccess ? (
@@ -85,17 +79,15 @@ export default function ResetPasswordPage() {
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <p className="text-base font-medium">
-                  {locale === "uk" ? "Пароль успішно змінено" : "Password updated successfully"}
+                  {t("auth.resetPassword.successTitle")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {locale === "uk"
-                    ? "Тепер увійдіть з новим паролем."
-                    : "You can now sign in with your new password."}
+                  {t("auth.resetPassword.successSubtitle")}
                 </p>
               </CardContent>
               <CardFooter>
                 <Button type="button" className="w-full" onClick={() => router.push(`/${locale}/auth/login`)}>
-                  {locale === "uk" ? "Перейти до входу" : "Go to sign in"}
+                  {t("auth.resetPassword.goToSignIn")}
                 </Button>
               </CardFooter>
             </>
@@ -104,7 +96,7 @@ export default function ResetPasswordPage() {
               <CardContent className="mb-4 space-y-4">
                 {error ? <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div> : null}
                 <div className="space-y-2">
-                  <Label htmlFor="password">{locale === "uk" ? "Новий пароль" : "New password"}</Label>
+                  <Label htmlFor="password">{t("auth.resetPassword.newPassword")}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -115,7 +107,7 @@ export default function ResetPasswordPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{locale === "uk" ? "Підтвердіть пароль" : "Confirm password"}</Label>
+                  <Label htmlFor="confirmPassword">{t("auth.resetPassword.confirmPassword")}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -131,16 +123,14 @@ export default function ResetPasswordPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {locale === "uk" ? "Збереження..." : "Saving..."}
+                      {t("auth.resetPassword.saving")}
                     </>
-                  ) : locale === "uk" ? (
-                    "Зберегти пароль"
                   ) : (
-                    "Save password"
+                    t("auth.resetPassword.save")
                   )}
                 </Button>
                 <Link href={`/${locale}/auth/login`} className="text-sm text-primary hover:underline">
-                  {locale === "uk" ? "Повернутися до входу" : "Back to sign in"}
+                  {t("auth.resetPassword.backToSignIn")}
                 </Link>
               </CardFooter>
             </>

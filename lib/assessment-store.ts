@@ -22,6 +22,16 @@ interface AssessmentStore {
   calculateResults: () => void
   setStep: (step: 'landing' | 'info' | 'questions' | 'analyzing' | 'results') => void
   purchaseExtendedReport: () => void
+  hydrateFromSavedAssessment: (payload: {
+    companyInfo: CompanyInfo
+    answers: AssessmentAnswer[]
+    overallScore: number
+    dimensionScores: DimensionScores
+    tier: AssessmentResults['tier']
+    savedAssessmentId: string
+    savedClientId?: string
+    hasExtendedAccess?: boolean
+  }) => void
   reset: () => void
 }
 
@@ -97,7 +107,7 @@ async function saveAssessmentToDatabase(results: AssessmentResults, extendedRepo
   }
 }
 
-function generateExtendedReport(results: AssessmentResults): ExtendedReportData {
+export function generateExtendedReport(results: AssessmentResults): ExtendedReportData {
   const { overallScore, dimensionScores, companyInfo } = results
   const readinessScore = overallScore
   
@@ -466,8 +476,30 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
       const extendedReport = generateExtendedReport(results)
       
       // Save to database (async, don't block UI)
-      saveAssessmentToDatabase(results, extendedReport)
-      
+      void saveAssessmentToDatabase(results, extendedReport).then((saved) => {
+        const assessmentId =
+          saved && typeof saved === "object" && "assessmentId" in saved
+            ? String((saved as { assessmentId?: unknown }).assessmentId ?? "")
+            : ""
+        const clientId =
+          saved && typeof saved === "object" && "clientId" in saved
+            ? String((saved as { clientId?: unknown }).clientId ?? "")
+            : ""
+
+        if (!assessmentId && !clientId) return
+
+        set((state) => {
+          if (!state.results) return state
+          return {
+            results: {
+              ...state.results,
+              savedAssessmentId: assessmentId || state.results.savedAssessmentId,
+              savedClientId: clientId || state.results.savedClientId,
+            },
+          }
+        })
+      })
+
       set({ results, extendedReport, step: 'results' })
     }, 3000)
   },
@@ -476,6 +508,26 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
   
   purchaseExtendedReport: () => {
     set({ hasPurchasedExtended: true })
+  },
+
+  hydrateFromSavedAssessment: (payload) => {
+    const results: AssessmentResults = {
+      companyInfo: payload.companyInfo,
+      answers: payload.answers,
+      overallScore: payload.overallScore,
+      dimensionScores: payload.dimensionScores,
+      tier: payload.tier,
+      savedAssessmentId: payload.savedAssessmentId,
+      savedClientId: payload.savedClientId,
+    }
+    const extendedReport = generateExtendedReport(results)
+    set({
+      results,
+      extendedReport,
+      step: 'results',
+      currentQuestionIndex: 0,
+      hasPurchasedExtended: payload.hasExtendedAccess ?? false,
+    })
   },
   
   reset: () => {

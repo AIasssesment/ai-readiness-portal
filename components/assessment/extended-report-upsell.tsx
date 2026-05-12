@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Lock,
   CheckCircle2,
@@ -14,12 +14,16 @@ import {
   Map,
   FileBarChart,
   ArrowRight,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { useAssessmentStore } from '@/lib/assessment-store'
 import { useLanguage } from '@/components/language-provider'
 import type { TranslationKey } from '@/lib/i18n'
+import { ApiClientError } from '@/lib/api/client'
+import { createMonobankInvoice, getReportReadiness } from '@/lib/api/payments'
 
 const FEATURE_ICONS = [
   TrendingUp,
@@ -34,11 +38,20 @@ const FEATURE_ICONS = [
   FileText,
 ]
 
+function buildReturnUrl(path: string) {
+  if (typeof window === 'undefined') return path
+  return `${window.location.origin}${path}`
+}
+
 export function ExtendedReportUpsell() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const [showCheckout, setShowCheckout] = useState(false)
+  const [showMonoConfirm, setShowMonoConfirm] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const purchaseExtendedReport = useAssessmentStore((state) => state.purchaseExtendedReport)
+  const [isCheckingReadiness, setIsCheckingReadiness] = useState(false)
+  const [reportDataReady, setReportDataReady] = useState(false)
+  const [missingReasons, setMissingReasons] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
   const results = useAssessmentStore((state) => state.results)
 
   const companyName = results?.companyInfo.companyName?.trim()
@@ -47,13 +60,102 @@ export function ExtendedReportUpsell() {
     companyName || t('extendedUpsell.companyFallback'),
   )
 
+  const clientId = results?.savedClientId
+  const assessmentId = results?.savedAssessmentId
+  const monoTitle = locale === 'uk' ? 'Рекомендуємо такий варіант:' : 'Recommended payment option:'
+  const monoButtonLabel = locale === 'uk' ? 'Онлайн-оплата карткою' : 'Online card payment'
+  const monoBrand = 'plata by mono'
+  const backLabel = locale === 'uk' ? 'Назад' : 'Back'
+
+  useEffect(() => {
+    if (!showCheckout) return
+    if (!assessmentId) {
+      setMissingReasons([])
+      setReportDataReady(true)
+      return
+    }
+
+    let cancelled = false
+    setIsCheckingReadiness(true)
+    setError(null)
+
+    void getReportReadiness(assessmentId)
+      .then((readiness) => {
+        if (cancelled) return
+        setReportDataReady(readiness.reportDataReady)
+        setMissingReasons(readiness.missingReasons ?? [])
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : t('unlock.readinessFetchFailed'))
+      })
+      .finally(() => {
+        if (cancelled) return
+        setIsCheckingReadiness(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [assessmentId, showCheckout, t])
+
   const handlePurchase = async () => {
+    if (!clientId) {
+      setError(t('unlock.clientMissing'))
+      return
+    }
+
     setIsProcessing(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    purchaseExtendedReport()
-    setShowCheckout(false)
-    setIsProcessing(false)
+    setError(null)
+
+    try {
+      const successPath = assessmentId
+        ? `/payment/success?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
+        : `/payment/success?returnLocale=${encodeURIComponent(locale)}`
+      const failPath = assessmentId
+        ? `/payment/fail?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
+        : `/payment/fail?returnLocale=${encodeURIComponent(locale)}`
+
+      const invoice = await createMonobankInvoice({
+        clientId,
+        assessmentId,
+        amount: 2900,
+        currency: 'USD',
+        mode: 'charge_and_manual',
+        returnUrlSuccess: buildReturnUrl(successPath),
+        returnUrlFail: buildReturnUrl(failPath),
+      })
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('latest_payment_id', invoice.paymentId)
+        if (invoice.reportRequestId) {
+          window.localStorage.setItem('latest_report_request_id', invoice.reportRequestId)
+        }
+      }
+
+      window.location.href = invoice.pageUrl
+    } catch (err) {
+      if (
+        err instanceof ApiClientError &&
+        err.status === 409 &&
+        err.code === 'REPORT_NOT_READY_BLOCKED'
+      ) {
+        const details = err.details as { missingReasons?: unknown } | undefined
+        if (Array.isArray(details?.missingReasons)) {
+          setMissingReasons(details.missingReasons.filter((v): v is string => typeof v === 'string'))
+        }
+      }
+      setError(err instanceof Error ? err.message : t('unlock.paymentFailedDescription'))
+    } finally {
+      setIsProcessing(false)
+    }
   }
+
+  const readinessInfo = useMemo(() => {
+    if (isCheckingReadiness) return t('unlock.checkingReadiness')
+    if (reportDataReady) return null
+    return t('unlock.manualFollowupDescription')
+  }, [isCheckingReadiness, reportDataReady, t])
 
   return (
     <>
@@ -140,21 +242,47 @@ export function ExtendedReportUpsell() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
-              <p className="text-center text-sm text-muted-foreground">
-                <strong className="text-foreground">{t('unlock.demoMode')}</strong> {t('extendedUpsell.demoBody')}
-              </p>
-            </div>
+            {readinessInfo ? (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm text-muted-foreground">
+                {isCheckingReadiness ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{readinessInfo}</span>
+                  </div>
+                ) : (
+                  <p>{readinessInfo}</p>
+                )}
+              </div>
+            ) : null}
+
+            {missingReasons.length > 0 ? (
+              <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4">
+                <p className="mb-2 text-sm font-medium text-foreground">{t('unlock.missingReasonsTitle')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {missingReasons.map((reason) => (
+                    <Badge key={reason} variant="secondary" className="text-xs">
+                      {reason}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {error ? (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            ) : null}
 
             <Button
               className="h-12 w-full rounded-xl bg-primary font-[family-name:var(--font-syne)] text-base font-bold text-primary-foreground hover:bg-primary/90"
-              onClick={handlePurchase}
-              disabled={isProcessing}
+              onClick={() => setShowMonoConfirm(true)}
+              disabled={isProcessing || isCheckingReadiness}
             >
               {isProcessing ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  {t('unlock.processing')}
+                  {t('unlock.redirectingToPayment')}
                 </>
               ) : (
                 <>
@@ -165,6 +293,46 @@ export function ExtendedReportUpsell() {
             </Button>
 
             <p className="text-center text-xs text-muted-foreground">{t('extendedUpsell.legalFooter')}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showMonoConfirm} onOpenChange={setShowMonoConfirm}>
+        <DialogContent className="border-border bg-background sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-[family-name:var(--font-syne)] text-xl">{monoTitle}</DialogTitle>
+            <DialogDescription>{t('unlock.purchaseDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-xl border border-border p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="h-6 w-6 rounded-full border-2 border-foreground" />
+                  <span className="font-medium">{monoButtonLabel}</span>
+                </div>
+                <span className="rounded-md bg-foreground px-3 py-1 text-sm font-semibold text-background">
+                  {monoBrand}
+                </span>
+              </div>
+            </div>
+            <Button
+              className="h-12 w-full rounded-xl bg-primary font-[family-name:var(--font-syne)] text-base font-bold text-primary-foreground hover:bg-primary/90"
+              onClick={() => {
+                setShowMonoConfirm(false)
+                void handlePurchase()
+              }}
+              disabled={isProcessing || isCheckingReadiness}
+            >
+              {isProcessing ? t('unlock.redirectingToPayment') : monoButtonLabel}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full rounded-xl"
+              onClick={() => setShowMonoConfirm(false)}
+              disabled={isProcessing}
+            >
+              {backLabel}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/db-client/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,6 +37,13 @@ type AssessmentRow = {
   dimension_scores: Record<string, number> | null
 }
 
+type ReportRequestRow = {
+  assessment_id: string | null
+  status: string
+}
+
+const PAID_REPORT_STATUSES = new Set(["paid", "pending_manual", "ready"])
+
 function getStatusBadge(status: string, locale: "en" | "uk") {
   switch (status) {
     case "completed":
@@ -52,23 +59,39 @@ function getStatusBadge(status: string, locale: "en" | "uk") {
 
 export default async function AssessmentsPage() {
   const locale = await getServerLocale()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const db = await createClient()
+  const { data: { user } } = await db.auth.getUser()
 
   // Get client
-  const { data: client } = await supabase
+  const { data: client } = await db
     .from("clients")
     .select()
     .eq("user_id", user?.id)
     .single()
 
   // Get all assessments
-  const { data: assessments } = await supabase
+  const { data: assessments } = await db
     .from("assessments")
     .select()
     .eq("client_id", (client as { id?: string } | null)?.id)
     .order("created_at", { ascending: false })
-  const hasExtendedAccess = Boolean((client as { has_extended_access?: boolean } | null)?.has_extended_access)
+  const typedAssessments = (assessments as unknown as AssessmentRow[]) || []
+  const reportRequestsQuery = (db as unknown as {
+    from: (table: string) => {
+      select: () => { eq: (column: string, value: string | undefined) => Promise<{ data: unknown }> }
+    }
+  })
+  const { data: reportRequests } = await reportRequestsQuery
+    .from("report_requests")
+    .select()
+    .eq("client_id", (client as { id?: string } | null)?.id)
+
+  const unlockedAssessmentIds = new Set(
+    ((reportRequests as unknown as ReportRequestRow[] | null) ?? [])
+      .filter((row) => PAID_REPORT_STATUSES.has(row.status))
+      .map((row) => row.assessment_id)
+      .filter((id): id is string => Boolean(id)),
+  )
 
   return (
     <div className="space-y-8">
@@ -87,9 +110,9 @@ export default async function AssessmentsPage() {
         </Link>
       </div>
 
-      {assessments && assessments.length > 0 ? (
+      {typedAssessments.length > 0 ? (
         <div className="grid gap-4">
-          {(assessments as unknown as AssessmentRow[]).map((assessment) => (
+          {typedAssessments.map((assessment) => (
             <Card key={assessment.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -125,7 +148,7 @@ export default async function AssessmentsPage() {
                           <div className="text-xs text-muted-foreground">{t(locale, "assessments.overallScore")}</div>
                     </div>
                     
-                    {hasExtendedAccess ? (
+                    {unlockedAssessmentIds.has(assessment.id) ? (
                       <Link href={`/portal/assessments/${assessment.id}`}>
                         <Button variant="outline" className="gap-2">
                           {t(locale, "assessments.viewReport")}
@@ -133,7 +156,13 @@ export default async function AssessmentsPage() {
                         </Button>
                       </Link>
                     ) : (
-                      <UnlockReportButton label={t(locale, "assessments.unlockReport")} className="gap-2" />
+                      <UnlockReportButton
+                        label={t(locale, "assessments.unlockReport")}
+                        className="gap-2"
+                        clientId={(client as { id?: string } | null)?.id}
+                        assessmentId={assessment.id}
+                        mode="charge_and_manual"
+                      />
                     )}
                   </div>
                 </div>
