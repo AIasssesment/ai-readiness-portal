@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'x-default': `${origin}/en`,
       },
     },
-  }
+  } 
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
