@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { LanguageProvider } from '@/components/language-provider'
+import { ClientToaster } from '@/components/client-toaster'
 import { isPublicLocale } from '@/lib/locale-path'
 import { t, type Locale } from '@/lib/i18n'
 
@@ -42,5 +43,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params
   if (!isPublicLocale(locale)) notFound()
 
-  return <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
+  return (
+    <>
+      <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
+      <ClientToaster />
+    </>
+  )
 }

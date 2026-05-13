@@ -193,6 +193,14 @@ export const MESSAGES = {
     "email.forgotPassword.button": "Reset password",
     "email.forgotPassword.outro": "If you didn’t request this, you can safely ignore this email.",
     "email.forgotPassword.validityHint": "This link is valid for 60 minutes.",
+    "email.assessmentProvision.subject": "Your AI Readiness Portal account",
+    "email.assessmentProvision.intro":
+      "We created a portal account for you so your assessment results are saved. You are already signed in on this device.",
+    "email.assessmentProvision.passwordLine": "Temporary password (change it soon):",
+    "email.assessmentProvision.deadline": "For security, change this password by {deadline}.",
+    "email.assessmentProvision.setPasswordCta": "Set a new password",
+    "email.assessmentProvision.footer":
+      "If you did not start the assessment, contact support — someone may have used your email by mistake.",
     "payment.fail.title": "Payment didn’t go through",
     "payment.fail.description": "Try again or use another payment method.",
     "payment.fail.goToPortal": "Go to portal",
@@ -539,6 +547,14 @@ export const MESSAGES = {
     "email.forgotPassword.button": "Скинути пароль",
     "email.forgotPassword.outro": "Якщо ви не надсилали цей запит, просто проігноруйте лист.",
     "email.forgotPassword.validityHint": "Посилання дійсне 60 хвилин.",
+    "email.assessmentProvision.subject": "Ваш акаунт AI Readiness Portal",
+    "email.assessmentProvision.intro":
+      "Ми створили для вас акаунт порталу, щоб зберегти результати оцінювання. На цьому пристрої ви вже авторизовані.",
+    "email.assessmentProvision.passwordLine": "Тимчасовий пароль (змініть якнайшвидше):",
+    "email.assessmentProvision.deadline": "З міркувань безпеки змініть пароль до {deadline}.",
+    "email.assessmentProvision.setPasswordCta": "Встановити новий пароль",
+    "email.assessmentProvision.footer":
+      "Якщо ви не проходили оцінювання, напишіть у підтримку — можливо, хтось помилково вказав ваш email.",
     "payment.fail.title": "Оплата не пройшла",
     "payment.fail.description": "Спробуйте ще раз або використайте інший спосіб оплати.",
     "payment.fail.goToPortal": "До порталу",

@@ -1,10 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, CheckCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn, normalizeCompanyWebsiteInput } from '@/lib/utils'
+import { parseApiErrorMessage } from '@/lib/http/parse-api-error-message'
 
 import { useAssessmentStore } from '@/lib/assessment-store'
 import type { CompanyInfo } from '@/lib/types'
@@ -14,7 +17,8 @@ const neonCtaButtonClass =
   'w-full rounded-xl border-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-4 py-4 font-[family-name:var(--font-syne)] text-base font-bold !whitespace-normal leading-tight text-zinc-950 shadow-[0_0_28px_-4px_rgba(45,212,191,0.55)] transition hover:brightness-105 hover:shadow-[0_0_40px_-2px_rgba(45,212,191,0.7)] sm:text-lg'
 
 export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
-  const { t } = useLanguage()
+  const router = useRouter()
+  const { t, locale } = useLanguage()
   const setCompanyInfo = useAssessmentStore((state) => state.setCompanyInfo)
   const [formData, setFormData] = useState<CompanyInfo>({
     firstName: '',
@@ -25,8 +29,9 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     email: '',
   })
   const [error, setError] = useState<string | null>(null)
+  const [isProvisioning, setIsProvisioning] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const companyWebsite = normalizeCompanyWebsiteInput(formData.companyName)
@@ -53,7 +58,45 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     }
 
     setError(null)
-    setCompanyInfo({ ...formData, companyName: companyWebsite })
+    setIsProvisioning(true)
+
+    try {
+      const res = await fetch('/api/assessment/provision-account', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          companyName: companyWebsite,
+          locale,
+        }),
+      })
+
+      const data = (await res.json()) as {
+        ok?: boolean
+        existingUser?: boolean
+      }
+
+      if (!res.ok) {
+        setError(parseApiErrorMessage(data) ?? t('companyForm.provisionFailed'))
+        return
+      }
+
+      if (data.existingUser) {
+        router.push(`/${locale}/auth/login?email=${encodeURIComponent(formData.email.trim())}`)
+        return
+      }
+
+      toast.success(t('companyForm.accountCreatedToast'))
+      window.dispatchEvent(new Event('portal-auth-changed'))
+      setCompanyInfo({ ...formData, companyName: companyWebsite })
+    } catch {
+      setError(t('companyForm.provisionFailed'))
+    } finally {
+      setIsProvisioning(false)
+    }
   }
 
   const formCard = (
@@ -84,7 +127,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         {t('companyForm.subtitle')}
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" autoComplete="on">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium text-muted-foreground">
@@ -149,9 +192,18 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
 
-        <Button type="submit" className={cn('mt-2 min-h-14', neonCtaButtonClass)}>
-          <span className="text-center break-words">{t('companyForm.cta')}</span>
-          <ArrowRight className="ml-2 h-5 w-5 shrink-0" />
+        <Button type="submit" disabled={isProvisioning} className={cn('mt-2 min-h-14', neonCtaButtonClass)}>
+          {isProvisioning ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 shrink-0 animate-spin" />
+              <span className="text-center break-words">{t('companyForm.provisioning')}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-center break-words">{t('companyForm.cta')}</span>
+              <ArrowRight className="ml-2 h-5 w-5 shrink-0" />
+            </>
+          )}
         </Button>
 
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
