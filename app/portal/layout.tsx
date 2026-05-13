@@ -39,6 +39,16 @@ export default async function PortalLayout({
     .single()
   const typedClient = (client ?? null) as unknown as Client | null
 
+  const appUserRows = await sql<Array<{ full_name: string | null }>>`
+    select full_name
+    from app_users
+    where id = ${user.id}::uuid
+    limit 1
+  `
+  const fullNameFromAccount = appUserRows[0]?.full_name?.trim() || null
+  const contactFromClient = typedClient?.contact_name?.trim() || null
+  const profileDisplayName = contactFromClient || fullNameFromAccount || null
+
   const recentChats =
     typedClient
       ? await sql<ConversationRow[]>`
@@ -62,13 +72,13 @@ export default async function PortalLayout({
     <LanguageProvider initialLocale={locale}>
     <div className="min-h-screen bg-muted/30 md:flex md:h-screen md:overflow-hidden">
       <div className="hidden h-screen w-[280px] shrink-0 md:block">
-        <PortalNav user={user} client={typedClient} recentChats={recentChatsForNav} />
+        <PortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} />
       </div>
 
       <div className="min-w-0 flex-1 md:h-screen md:overflow-y-auto">
         <div className="border-b bg-background px-4 py-3 md:hidden">
           <div className="flex items-center justify-end">
-            <MobilePortalNav user={user} client={typedClient} recentChats={recentChatsForNav} />
+            <MobilePortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} />
           </div>
         </div>
         <main className="px-4 py-8 md:px-8">

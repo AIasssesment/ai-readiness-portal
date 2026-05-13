@@ -86,14 +86,6 @@ export default async function JobRiskPage({
     )
   }
 
-  const workforceRows = await sql<Array<{ role_title: string; employee_count: number }>>`
-    select role_title, employee_count
-    from workforce_roles
-    where client_id = ${client.id}
-    order by employee_count desc
-  `
-  const workforceTotal = workforceRows.reduce((sum, row) => sum + row.employee_count, 0)
-
   const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null; generated_at: string }>>`
     select id, overall_risk_score, executive_summary, generated_at
     from job_risk_reports
@@ -113,22 +105,7 @@ export default async function JobRiskPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 rounded-lg border border-border/50 bg-muted/30 p-3">
-            <p className="text-sm font-medium">{t(locale, "jobRisk.workforceRoles")}</p>
-            {workforceRows.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                {workforceRows.slice(0, 6).map((row) => (
-                  <li key={row.role_title}>
-                    {row.role_title}: {row.employee_count}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t(locale, "jobRisk.noWorkforceRolesPrefix")} <code>/api/workforce/roles</code> {t(locale, "jobRisk.noWorkforceRolesSuffix")}
-              </p>
-            )}
-          </div>
+          <p className="mb-4 text-sm text-muted-foreground">{t(locale, "jobRisk.generatePreamble")}</p>
           <JobRiskGenerateButton />
         </CardContent>
       </Card>

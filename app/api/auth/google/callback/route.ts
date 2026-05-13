@@ -112,7 +112,7 @@ async function ensureUserAndIdentity(claims: GoogleIdTokenClaims) {
     if (!existingClient[0]) {
       await tx`
         insert into clients (user_id, company_name, contact_name, contact_email)
-        values (${userId}, ${claims.name ?? "New Company"}, ${claims.name ?? null}, ${claims.email})
+        values (${userId}, ${"New Company"}, ${claims.name ?? null}, ${claims.email})
       `
     }
 

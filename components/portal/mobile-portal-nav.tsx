@@ -36,10 +36,12 @@ type RecentChat = {
 export function MobilePortalNav({
   user,
   client,
+  profileDisplayName,
   recentChats,
 }: {
   user: AuthUser
   client: Client | null
+  profileDisplayName?: string | null
   recentChats: RecentChat[]
 }) {
   const { t } = useLanguage()
@@ -69,6 +71,7 @@ export function MobilePortalNav({
           <PortalNav
             user={user}
             client={client}
+            profileDisplayName={profileDisplayName}
             recentChats={recentChats}
             onNavigate={() => setOpen(false)}
           />

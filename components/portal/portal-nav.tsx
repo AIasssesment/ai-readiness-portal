@@ -28,7 +28,6 @@ import {
   Lightbulb, 
   ShieldAlert,
   MessagesSquare,
-  Users,
   Plus,
   Search,
   MoreHorizontal,
@@ -57,6 +56,8 @@ interface Client {
 interface PortalNavProps {
   user: AuthUser
   client: Client | null
+  /** Resolved in layout: clients.contact_name, else app_users.full_name */
+  profileDisplayName?: string | null
   recentChats: Array<{
     id: string
     title: string
@@ -67,7 +68,7 @@ interface PortalNavProps {
   onNavigate?: () => void
 }
 
-export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavProps) {
+export function PortalNav({ user, client, profileDisplayName, recentChats, onNavigate }: PortalNavProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -89,11 +90,16 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
     if (!query) return recentChats
     return recentChats.filter((chat) => chat.title.toLowerCase().includes(query))
   }, [chatSearch, recentChats])
+
+  const personLabel =
+    (profileDisplayName && profileDisplayName.trim()) ||
+    (client?.contact_name && client.contact_name.trim()) ||
+    user.email
+
   const navItems = [
     { href: "/portal", label: t("portal.nav.dashboard"), icon: LayoutDashboard },
     { href: "/portal/assessments", label: t("portal.nav.assessments"), icon: FileText },
     { href: "/portal/opportunities", label: t("portal.nav.opportunities"), icon: Lightbulb },
-    { href: "/portal/workforce", label: t("portal.nav.workforce"), icon: Users },
     { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
   ]
 
@@ -343,15 +349,18 @@ export function PortalNav({ user, client, recentChats, onNavigate }: PortalNavPr
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                 <User className="h-4 w-4 text-primary" />
               </div>
-              <span className="max-w-40 truncate">
-                {client?.company_name || user.email}
-              </span>
+              <span className="max-w-40 truncate">{personLabel}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <div className="px-2 py-1.5">
-              <p className="text-sm font-medium">{client?.company_name}</p>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
+              <p className="text-sm font-medium">{personLabel}</p>
+              {personLabel !== user.email ? (
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+              ) : null}
+              {client?.company_name ? (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{client.company_name}</p>
+              ) : null}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
