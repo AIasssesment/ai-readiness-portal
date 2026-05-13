@@ -40,8 +40,8 @@ export async function POST(request: Request) {
       `
 
       await tx`
-        insert into clients (user_id, company_name, contact_name, contact_email)
-        values (${user.id}, ${companyName}, ${contactName}, ${email})
+        insert into clients (id, user_id, company_name, contact_name, contact_email)
+        values (gen_random_uuid(), ${user.id}, ${companyName}, ${contactName}, ${email})
       `
 
       return { user }
