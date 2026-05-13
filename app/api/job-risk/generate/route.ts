@@ -38,6 +38,73 @@ type BenchmarkRow = {
   source: string
 }
 
+type BenchmarkTemplate = {
+  normalized_role: string
+  display_role: string
+}
+
+const DEPT_FOR_SYNTHETIC = ["Operations", "Customer Support", "Finance", "IT", "Sales", "HR"]
+
+/** Rough headcount from clients.company_size (assessment / portal strings). */
+function inferHeadcountFromCompanySize(companySize: string | null): number {
+  const s = (companySize || "").toLowerCase()
+  if (s.includes("5000") || s.includes("enterprise")) return 3500
+  if (s.includes("501") && s.includes("5000")) return 900
+  if ((s.includes("51") && s.includes("500")) || s.includes("mid")) return 160
+  if (s.includes("1-50") || s.includes("1–50") || s.includes("small")) return 28
+  return 80
+}
+
+const STATIC_ROLE_TEMPLATES: BenchmarkTemplate[] = [
+  { normalized_role: "data entry clerk", display_role: "Data Entry Clerk" },
+  { normalized_role: "customer support representative", display_role: "Customer Support Representative" },
+  { normalized_role: "bookkeeper", display_role: "Bookkeeper" },
+  { normalized_role: "marketing coordinator", display_role: "Marketing Coordinator" },
+  { normalized_role: "operations coordinator", display_role: "Operations Coordinator" },
+]
+
+async function resolveWorkforceRoles(
+  clientId: string,
+  client: { company_size: string | null },
+): Promise<WorkforceRole[]> {
+  const existing = await sql<WorkforceRole[]>`
+    select role_title, normalized_role, department, employee_count
+    from workforce_roles
+    where client_id = ${clientId}
+    order by employee_count desc
+    limit 50
+  `
+  if (existing.length > 0) return existing
+
+  let templateRows: BenchmarkTemplate[] = []
+  try {
+    templateRows = await sql<BenchmarkTemplate[]>`
+      select normalized_role, display_role
+      from external_role_risk_benchmarks
+      order by risk_score_0_1 desc
+      limit 6
+    `
+  } catch {
+    templateRows = []
+  }
+  const templates = templateRows.length >= 4 ? templateRows : STATIC_ROLE_TEMPLATES
+  const n = templates.length
+  const target = Math.max(n, inferHeadcountFromCompanySize(client.company_size))
+  const base = Math.max(1, Math.floor(target / n))
+  let used = 0
+  return templates.map((row, i) => {
+    const isLast = i === n - 1
+    const employee_count = isLast ? Math.max(1, target - used) : base
+    used += employee_count
+    return {
+      role_title: row.display_role,
+      normalized_role: row.normalized_role,
+      department: DEPT_FOR_SYNTHETIC[i % DEPT_FOR_SYNTHETIC.length],
+      employee_count,
+    }
+  })
+}
+
 function fallbackRiskByDepartment(department: string | null) {
   const value = (department || "").toLowerCase()
   if (value.includes("finance")) return 0.72
@@ -80,22 +147,14 @@ export async function POST() {
       return NextResponse.json({ error: "Assessment required before generating job risk" }, { status: 400 })
     }
 
-    const workforceRoles = await sql<WorkforceRole[]>`
-      select role_title, normalized_role, department, employee_count
-      from workforce_roles
-      where client_id = ${client.id}
-      order by employee_count desc
-      limit 50
-    `
+    const workforceRoles = await resolveWorkforceRoles(client.id, {
+      company_size: client.company_size,
+    })
 
-    if (!workforceRoles.length) {
-      return NextResponse.json(
-        {
-          error: "Workforce roles are required. Add job titles and employee counts before generating job risk.",
-        },
-        { status: 400 },
-      )
-    }
+    const customWorkforceRows = await sql<Array<{ c: number }>>`
+      select count(*)::int as c from workforce_roles where client_id = ${client.id}
+    `
+    const isInferredWorkforce = (customWorkforceRows[0]?.c ?? 0) === 0
 
     const benchmarks = await sql<BenchmarkRow[]>`
       select normalized_role, risk_score_0_1, source
@@ -143,7 +202,7 @@ Industry: ${client.industry || "N/A"}
 Company size: ${client.company_size || "N/A"} employees
 Latest AI Maturity Score: ${latestAssessment.overall_score}/100 (${latestAssessment.readiness_level})
 Dimension scores: ${JSON.stringify(latestAssessment.dimension_scores || {})}
-
+${isInferredWorkforce ? "\nNote: No custom workforce_roles were saved — using a representative role mix from public automation-risk benchmarks and company size for headcount estimates.\n" : ""}
 Workforce data (ground truth input):
 ${JSON.stringify(workforceWithRisk, null, 2)}
 

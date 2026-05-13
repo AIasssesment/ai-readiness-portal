@@ -19,6 +19,7 @@ interface AssessmentStore {
   answerQuestion: (questionId: string, value: number) => void
   nextQuestion: () => void
   prevQuestion: () => void
+  goToQuestion: (index: number) => void
   calculateResults: () => void
   setStep: (step: 'landing' | 'info' | 'questions' | 'analyzing' | 'results') => void
   purchaseExtendedReport: () => void
@@ -441,7 +442,13 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
       set({ currentQuestionIndex: currentQuestionIndex - 1 })
     }
   },
-  
+
+  goToQuestion: (index) => {
+    const max = ASSESSMENT_QUESTIONS.length - 1
+    const clamped = Math.max(0, Math.min(Math.floor(index), max))
+    set({ currentQuestionIndex: clamped })
+  },
+
   calculateResults: () => {
     const { companyInfo, answers } = get()
     if (!companyInfo) return
