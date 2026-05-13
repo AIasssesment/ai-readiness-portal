@@ -1,10 +1,8 @@
-import { NextResponse } from "next/server"
-
 function json(message: string, status: number) {
-  return NextResponse.json({ error: { message } }, { status })
+  return Response.json({ error: { message } }, { status })
 }
 
-/** Typed `NextResponse` helpers; body matches `parseApiErrorMessage` expectations. */
+/** Route handler helpers; body matches `parseApiErrorMessage` expectations. */
 export const apiErrors = {
   badRequest: (message: string) => json(message, 400),
   unauthorized: (message = "Unauthorized") => json(message, 401),
@@ -12,5 +10,5 @@ export const apiErrors = {
   notFound: (message = "Not found") => json(message, 404),
   conflict: (message: string) => json(message, 409),
   tooManyRequests: (message = "Too many requests") => json(message, 429),
-  internalServerError: (message = "Internal server error") => json(message, 500),
+  internal: (message = "Internal server error") => json(message, 500),
 }

@@ -100,7 +100,12 @@ function buildBuckets(now: Date, range: TimeRange) {
   return buckets
 }
 
-function formatLabel(key: string, range: TimeRange, locale: "en" | "uk") {
+function formatLabel(
+  key: string,
+  range: TimeRange,
+  locale: "en" | "uk",
+  weekBucketLabel: string,
+) {
   const dateLocale = locale === "uk" ? "uk-UA" : "en-US"
   if (range === "week") {
     const d = new Date(key)
@@ -110,7 +115,7 @@ function formatLabel(key: string, range: TimeRange, locale: "en" | "uk") {
   if (range === "month") {
     const d = new Date(key)
     const monthDay = d.toLocaleDateString(dateLocale, { day: "numeric", month: "short" })
-    return locale === "uk" ? `тиж. від ${monthDay}` : `wk of ${monthDay}`
+    return weekBucketLabel.replace("{date}", monthDay)
   }
 
   const [year, month] = key.split("-")
@@ -154,15 +159,16 @@ export function OpportunitiesStatsChart({ data }: OpportunitiesStatsChartProps) 
       }
     }
 
+    const weekBucketLabel = t("chart.opportunityTimeline.weekBucketLabel")
     return buckets.map(({ key }) => {
       const stats = grouped.get(key)
       return {
-        label: formatLabel(key, range, locale),
+        label: formatLabel(key, range, locale, weekBucketLabel),
         annualSavings: Math.round(stats?.annualSavings ?? 0),
         weeklyHours: Math.round(stats?.weeklyHours ?? 0),
       }
     })
-  }, [data, locale, range])
+  }, [data, locale, range, t])
 
   return (
     <Card className="border-border/60 bg-card/60 backdrop-blur-sm">

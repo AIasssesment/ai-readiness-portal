@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ArrowRight, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { cn, normalizeCompanyWebsiteInput } from '@/lib/utils'
 
 import { useAssessmentStore } from '@/lib/assessment-store'
 import type { CompanyInfo } from '@/lib/types'
@@ -29,7 +29,9 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.companyName.trim()) {
+    const companyWebsite = normalizeCompanyWebsiteInput(formData.companyName)
+
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !companyWebsite) {
       setError(t('companyForm.errorRequired'))
       return
     }
@@ -39,8 +41,19 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
       return
     }
 
+    let urlOk = false
+    try {
+      urlOk = Boolean(new URL(companyWebsite))
+    } catch {
+      urlOk = false
+    }
+    if (!urlOk) {
+      setError(t('companyForm.errorInvalidWebsite'))
+      return
+    }
+
     setError(null)
-    setCompanyInfo(formData)
+    setCompanyInfo({ ...formData, companyName: companyWebsite })
   }
 
   const formCard = (
@@ -114,12 +127,16 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         <div>
-          <label htmlFor="companyName" className="mb-1.5 block text-sm font-medium text-muted-foreground">
+          <label htmlFor="companyUrl" className="mb-1.5 block text-sm font-medium text-muted-foreground">
             {t('companyForm.companyName')}
           </label>
           <Input
-            id="companyName"
-            placeholder={t('companyForm.phCompany')}
+            id="companyUrl"
+            name="url"
+            type="text"
+            autoComplete="url"
+            inputMode="url"
+            placeholder={t('companyForm.phWebsite')}
             value={formData.companyName}
             onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
             className="h-12 border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RefreshCcw, LayoutDashboard, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,23 +8,49 @@ import { useAssessmentStore } from '@/lib/assessment-store'
 import { BasicResults } from './basic-results'
 import { ExtendedReportUpsell } from './extended-report-upsell'
 import { ExtendedReport } from './extended-report'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useLanguage } from '@/components/language-provider'
 
 export function ResultsPage() {
   const { locale } = useLanguage()
-  const { hasPurchasedExtended, reset } = useAssessmentStore()
+  const { hasPurchasedExtended, reset, results, purchaseExtendedReport } = useAssessmentStore()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const supabase = useMemo(() => createClient(), [])
+  const paymentTestMode = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true'
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        const data = (await res.json()) as { user?: unknown }
+        setIsLoggedIn(!!data.user)
+      } catch {
+        setIsLoggedIn(false)
+      }
     }
-    checkAuth()
-  }, [supabase])
+    void checkAuth()
+    window.addEventListener('portal-auth-changed', checkAuth)
+    return () => window.removeEventListener('portal-auth-changed', checkAuth)
+  }, [])
+
+  useEffect(() => {
+    if (!paymentTestMode || hasPurchasedExtended || !results?.savedAssessmentId || typeof document === 'undefined')
+      return
+
+    const key = 'test_paid_assessment_ids'
+    const raw = document.cookie
+      .split('; ')
+      .find((part) => part.startsWith(`${key}=`))
+      ?.split('=')[1]
+    const decoded = raw ? decodeURIComponent(raw) : ''
+    const paidIds = decoded
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean)
+
+    if (paidIds.includes(results.savedAssessmentId)) {
+      purchaseExtendedReport()
+    }
+  }, [hasPurchasedExtended, paymentTestMode, purchaseExtendedReport, results?.savedAssessmentId])
 
   return (
     <div className="space-y-8">
@@ -41,7 +67,7 @@ export function ResultsPage() {
                   {isLoggedIn ? 'Results Saved to Your Portal' : 'Save Your Results'}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {isLoggedIn 
+                  {isLoggedIn
                     ? 'Access your dashboard to track progress and view opportunities'
                     : 'Sign in to save results and track your AI journey over time'}
                 </p>

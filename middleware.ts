@@ -1,4 +1,4 @@
-import { updateSession } from '@/lib/supabase/middleware'
+import { updateSession } from '@/lib/db-client/middleware'
 import { type NextRequest, NextResponse } from 'next/server'
 import { LOCALE_COOKIE_NAME } from '@/lib/i18n'
 
@@ -28,7 +28,6 @@ export async function middleware(request: NextRequest) {
 
   const response = await updateSession(request)
 
-  // URL /en/... або /uk/... задає мову для наступних відвідувань (наприклад /portal) через куку
   const localeFromPath = pathname.match(/^\/(en|uk)(?:\/|$)/)
   if (localeFromPath?.[1] === 'en' || localeFromPath?.[1] === 'uk') {
     response.cookies.set(LOCALE_COOKIE_NAME, localeFromPath[1], {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/db-client/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,34 +59,35 @@ export default function SettingsPage() {
     company_size: ""
   })
 
-  const supabase = useMemo(() => createClient(), [])
+  const db = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function loadClient() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await db.auth.getUser()
       if (!user) return
 
-      const { data } = await supabase
+      const { data } = await db
         .from("clients")
         .select()
         .eq("user_id", user.id)
         .single()
 
       if (data) {
-        setClient(data)
+        const row = data as Client
+        setClient(row)
         setFormData({
-          company_name: data.company_name || "",
-          contact_name: data.contact_name || "",
-          contact_email: data.contact_email || "",
-          industry: data.industry || "",
-          company_size: data.company_size || ""
+          company_name: row.company_name || "",
+          contact_name: row.contact_name || "",
+          contact_email: row.contact_email || "",
+          industry: row.industry || "",
+          company_size: row.company_size || ""
         })
       }
       setLoading(false)
     }
 
     loadClient()
-  }, [supabase])
+  }, [db])
 
   const handleSave = async () => {
     if (!client) return
@@ -94,7 +95,7 @@ export default function SettingsPage() {
     setSaving(true)
     setSaved(false)
 
-    const { error } = await supabase
+    const { error } = await db
       .from("clients")
       .update({
         company_name: formData.company_name,
@@ -149,8 +150,8 @@ export default function SettingsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="uk">Українська</SelectItem>
+              <SelectItem value="en">{t("settings.language.option.en")}</SelectItem>
+              <SelectItem value="uk">{t("settings.language.option.uk")}</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
@@ -203,7 +204,7 @@ export default function SettingsPage() {
               type="email"
               value={formData.contact_email}
               onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-              placeholder="email@company.com"
+              placeholder={t("settings.contact.emailPlaceholder")}
             />
           </div>
 
@@ -245,7 +246,7 @@ export default function SettingsPage() {
                 <SelectContent>
                   {companySizes.map((size) => (
                     <SelectItem key={size} value={size}>
-                      {locale === "uk" ? `${size} співробітників` : `${size} employees`}
+                      {`${size} ${t("settings.companySize.suffix")}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
