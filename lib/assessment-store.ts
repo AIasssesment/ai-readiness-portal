@@ -16,7 +16,7 @@ interface AssessmentStore {
   
   // Actions
   setCompanyInfo: (info: CompanyInfo) => void
-  answerQuestion: (questionId: string, value: number) => void
+  answerQuestion: (questionId: string, optionIndex: number) => void
   nextQuestion: () => void
   prevQuestion: () => void
   goToQuestion: (index: number) => void
@@ -416,16 +416,25 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
     set({ companyInfo: info, step: 'questions' })
   },
   
-  answerQuestion: (questionId, value) => {
+  answerQuestion: (questionId, optionIndex) => {
+    const question = ASSESSMENT_QUESTIONS.find((q) => q.id === questionId)
+    const option = question?.options[optionIndex]
+    if (!option) return
+
     const { answers } = get()
     const existingIndex = answers.findIndex((a) => a.questionId === questionId)
-    
+    const entry: AssessmentAnswer = {
+      questionId,
+      value: option.value,
+      optionIndex,
+    }
+
     if (existingIndex >= 0) {
       const newAnswers = [...answers]
-      newAnswers[existingIndex] = { questionId, value }
+      newAnswers[existingIndex] = entry
       set({ answers: newAnswers })
     } else {
-      set({ answers: [...answers, { questionId, value }] })
+      set({ answers: [...answers, entry] })
     }
   },
   

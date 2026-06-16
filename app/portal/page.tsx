@@ -148,7 +148,7 @@ export default async function PortalDashboard() {
             {t(locale, "dashboard.overviewSubtitle")}
           </p>
         </div>
-        <Link href="/">
+        <Link href="/portal/assessments/new">
           <Button className="gap-2">
             <Zap className="h-4 w-4" />
             {t(locale, "dashboard.newAssessment")}
@@ -285,7 +285,7 @@ export default async function PortalDashboard() {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground mb-4">{t(locale, "dashboard.noAssessmentsYet")}</p>
-                <Link href="/">
+                <Link href="/portal/assessments/new">
                   <Button>{t(locale, "dashboard.takeFirstAssessment")}</Button>
                 </Link>
               </div>
@@ -358,7 +358,7 @@ export default async function PortalDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link href="/" className="block">
+            <Link href="/portal/assessments/new" className="block">
               <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Zap className="h-5 w-5 text-primary" />

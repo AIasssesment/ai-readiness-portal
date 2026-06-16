@@ -11,6 +11,18 @@ import type { TranslationKey } from '@/lib/i18n'
 
 const AVG_SECONDS_PER_QUESTION = 12
 
+function selectedOptionIndex(
+  question: (typeof ASSESSMENT_QUESTIONS)[number],
+  answer: { value: number; optionIndex?: number } | undefined,
+): number | undefined {
+  if (!answer) return undefined
+  if (typeof answer.optionIndex === 'number' && answer.optionIndex >= 0) {
+    return answer.optionIndex
+  }
+  const byValue = question.options.findIndex((o) => o.value === answer.value)
+  return byValue >= 0 ? byValue : undefined
+}
+
 export function QuestionCard() {
   const { t } = useLanguage()
   const {
@@ -25,6 +37,7 @@ export function QuestionCard() {
 
   const question = ASSESSMENT_QUESTIONS[currentQuestionIndex]
   const currentAnswer = answers.find((a) => a.questionId === question.id)
+  const activeOptionIndex = selectedOptionIndex(question, currentAnswer)
   const progress = Math.round(((currentQuestionIndex + 1) / ASSESSMENT_QUESTIONS.length) * 100)
   const isLastQuestion = currentQuestionIndex === ASSESSMENT_QUESTIONS.length - 1
   const remainingQuestions = ASSESSMENT_QUESTIONS.length - currentQuestionIndex - 1
@@ -49,7 +62,7 @@ export function QuestionCard() {
         e.preventDefault()
         const idx = keyNum - 1
         const option = question.options[idx]
-        if (option) answerQuestion(question.id, option.value)
+        if (option) answerQuestion(question.id, idx)
         return
       }
 
@@ -78,7 +91,8 @@ export function QuestionCard() {
   }, [
     question.id,
     question.options,
-    currentAnswer?.value,
+    currentAnswer,
+    activeOptionIndex,
     currentQuestionIndex,
     answerQuestion,
     prevQuestion,
@@ -122,12 +136,12 @@ export function QuestionCard() {
 
         <div className="space-y-3">
           {question.options.map((option, index) => {
-            const selected = currentAnswer?.value === option.value
+            const selected = activeOptionIndex === index
             return (
               <button
                 key={index}
                 type="button"
-                onClick={() => answerQuestion(question.id, option.value)}
+                onClick={() => answerQuestion(question.id, index)}
                 className={cn(
                   'group flex w-full items-center gap-3 rounded-xl border-2 bg-secondary px-5 py-4 text-left text-[15px] transition-all',
                   selected ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40',

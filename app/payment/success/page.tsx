@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSearchParams } from "next/navigation"
 import { getReportRequest, readLatestReportRequestId } from "@/lib/api/payments"
+import { ClearPaymentBridge } from "@/components/payment/clear-payment-bridge"
 import type { ReportRequestResponse } from "@/lib/api/types"
 import { t, type Locale, isLocale } from "@/lib/i18n"
 
@@ -104,6 +105,7 @@ function PaymentSuccessContent() {
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-10">
+      <ClearPaymentBridge />
       <Card className="w-full">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">

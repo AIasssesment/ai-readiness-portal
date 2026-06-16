@@ -12,6 +12,12 @@ import {
   getReportReadiness,
   storeLatestReportRequestId,
 } from "@/lib/api/payments"
+import {
+  beginPaymentFlow,
+  buildPaymentFailPath,
+  buildPaymentSuccessPath,
+  preparePaymentWindow,
+} from "@/lib/payment-flow"
 import type { PaymentMode, ReportReadinessResponse } from "@/lib/api/types"
 
 type UnlockReportButtonProps = {
@@ -69,6 +75,7 @@ export function UnlockReportButton({
   const [readiness, setReadiness] = useState<ReportReadinessResponse | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [missingReasons, setMissingReasons] = useState<string[]>([])
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
   const { t, locale } = useLanguage()
   const resolvedLabel = label ?? t("unlock.fullReport")
   const monoTitle = locale === "uk" ? "Рекомендуємо такий варіант:" : "Recommended payment option:"
@@ -139,7 +146,7 @@ export function UnlockReportButton({
     }
   }
 
-  const handleCreateInvoice = async () => {
+  const handleCreateInvoice = async (paymentWindow?: Window | null) => {
     if (!clientId) {
       setPhase("payment_error")
       setErrorMessage(t("unlock.clientMissing"))
@@ -159,14 +166,11 @@ export function UnlockReportButton({
 
     setIsProcessing(true)
     setErrorMessage(null)
+    setPaymentNotice(null)
 
     try {
-      const successPath = assessmentId
-        ? `/payment/success?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
-        : `/payment/success?returnLocale=${encodeURIComponent(locale)}`
-      const failPath = assessmentId
-        ? `/payment/fail?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
-        : `/payment/fail?returnLocale=${encodeURIComponent(locale)}`
+      const successPath = buildPaymentSuccessPath(locale, assessmentId)
+      const failPath = buildPaymentFailPath(locale, assessmentId, true)
       const successUrl = returnUrlSuccess ?? buildReturnUrl(successPath)
       const failUrl = returnUrlFail ?? buildReturnUrl(failPath)
 
@@ -197,8 +201,36 @@ export function UnlockReportButton({
         hasPageUrl: Boolean(response.pageUrl),
       })
 
-      window.location.href = response.pageUrl
+      if (!response.pageUrl) {
+        paymentWindow?.close()
+        setPhase("payment_error")
+        setErrorMessage(t("unlock.paymentFailedDescription"))
+        return
+      }
+
+      const launch = beginPaymentFlow({
+        pageUrl: response.pageUrl,
+        reportRequestId: response.reportRequestId,
+        assessmentId,
+        locale,
+        isLoggedIn: true,
+        paymentWindow,
+      })
+
+      if (launch.popupBlocked) {
+        setPhase("payment_error")
+        setErrorMessage(t("unlock.popupBlocked"))
+        return
+      }
+
+      setOpen(false)
+      setIsMonoConfirmOpen(false)
+
+      if (launch.mode === "new_tab") {
+        setPaymentNotice(t("unlock.paymentTabOpened"))
+      }
     } catch (error) {
+      paymentWindow?.close()
       if (
         error instanceof ApiClientError &&
         error.status === 409 &&
@@ -241,6 +273,12 @@ export function UnlockReportButton({
 
   return (
     <>
+      {paymentNotice ? (
+        <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+          {paymentNotice}
+        </div>
+      ) : null}
+
       <Button variant={variant} className={className} onClick={() => setOpen(true)}>
         {resolvedLabel}
         <ArrowRight className="h-4 w-4" />
@@ -344,8 +382,9 @@ export function UnlockReportButton({
             <Button
               className="h-12 w-full rounded-xl"
               onClick={() => {
+                const paymentWindow = preparePaymentWindow()
                 setIsMonoConfirmOpen(false)
-                void handleCreateInvoice()
+                void handleCreateInvoice(paymentWindow)
               }}
               disabled={isProcessing || isCheckingReadiness || !canPay}
             >
