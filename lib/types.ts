@@ -21,6 +21,8 @@ export interface AssessmentQuestion {
 export interface AssessmentAnswer {
   questionId: string
   value: number
+  /** Which option was picked (0-based); required when options share the same score value */
+  optionIndex?: number
 }
 
 export interface DimensionScores {
