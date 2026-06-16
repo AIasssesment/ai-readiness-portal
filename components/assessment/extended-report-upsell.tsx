@@ -24,6 +24,12 @@ import { useLanguage } from '@/components/language-provider'
 import type { TranslationKey } from '@/lib/i18n'
 import { ApiClientError } from '@/lib/api/client'
 import { createMonobankInvoice, getReportReadiness } from '@/lib/api/payments'
+import {
+  beginPaymentFlow,
+  buildPaymentFailPath,
+  buildPaymentSuccessPath,
+  preparePaymentWindow,
+} from '@/lib/payment-flow'
 
 const FEATURE_ICONS = [
   TrendingUp,
@@ -52,6 +58,8 @@ export function ExtendedReportUpsell() {
   const [reportDataReady, setReportDataReady] = useState(false)
   const [missingReasons, setMissingReasons] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const results = useAssessmentStore((state) => state.results)
 
   const companyName = results?.companyInfo.companyName?.trim()
@@ -66,6 +74,21 @@ export function ExtendedReportUpsell() {
   const monoButtonLabel = locale === 'uk' ? 'Онлайн-оплата карткою' : 'Online card payment'
   const monoBrand = 'plata by mono'
   const backLabel = locale === 'uk' ? 'Назад' : 'Back'
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        const data = (await res.json()) as { user?: unknown }
+        setIsLoggedIn(!!data.user)
+      } catch {
+        setIsLoggedIn(false)
+      }
+    }
+    void checkAuth()
+    window.addEventListener('portal-auth-changed', checkAuth)
+    return () => window.removeEventListener('portal-auth-changed', checkAuth)
+  }, [])
 
   useEffect(() => {
     if (!showCheckout) return
@@ -99,7 +122,7 @@ export function ExtendedReportUpsell() {
     }
   }, [assessmentId, showCheckout, t])
 
-  const handlePurchase = async () => {
+  const handlePurchase = async (paymentWindow?: Window | null) => {
     if (!clientId) {
       setError(t('unlock.clientMissing'))
       return
@@ -107,14 +130,11 @@ export function ExtendedReportUpsell() {
 
     setIsProcessing(true)
     setError(null)
+    setPaymentNotice(null)
 
     try {
-      const successPath = assessmentId
-        ? `/payment/success?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
-        : `/payment/success?returnLocale=${encodeURIComponent(locale)}`
-      const failPath = assessmentId
-        ? `/payment/fail?assessmentId=${encodeURIComponent(assessmentId)}&returnLocale=${encodeURIComponent(locale)}`
-        : `/payment/fail?returnLocale=${encodeURIComponent(locale)}`
+      const successPath = buildPaymentSuccessPath(locale, assessmentId)
+      const failPath = buildPaymentFailPath(locale, assessmentId, isLoggedIn)
 
       const invoice = await createMonobankInvoice({
         clientId,
@@ -133,8 +153,34 @@ export function ExtendedReportUpsell() {
         }
       }
 
-      window.location.href = invoice.pageUrl
+      if (!invoice.pageUrl) {
+        paymentWindow?.close()
+        setError(t('unlock.paymentFailedDescription'))
+        return
+      }
+
+      const launch = beginPaymentFlow({
+        pageUrl: invoice.pageUrl,
+        reportRequestId: invoice.reportRequestId,
+        assessmentId,
+        locale,
+        isLoggedIn,
+        paymentWindow,
+      })
+
+      if (launch.popupBlocked) {
+        setError(t('unlock.popupBlocked'))
+        return
+      }
+
+      setShowCheckout(false)
+      setShowMonoConfirm(false)
+
+      if (launch.mode === 'new_tab') {
+        setPaymentNotice(t('unlock.paymentTabOpened'))
+      }
     } catch (err) {
+      paymentWindow?.close()
       if (
         err instanceof ApiClientError &&
         err.status === 409 &&
@@ -159,6 +205,12 @@ export function ExtendedReportUpsell() {
 
   return (
     <>
+      {paymentNotice ? (
+        <div className="border-b border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm text-foreground">
+          {paymentNotice}
+        </div>
+      ) : null}
+
       <div className="bg-secondary px-6 py-16">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8 overflow-hidden rounded-2xl border border-primary/30 bg-background">
@@ -318,8 +370,9 @@ export function ExtendedReportUpsell() {
             <Button
               className="h-12 w-full rounded-xl bg-primary font-[family-name:var(--font-syne)] text-base font-bold text-primary-foreground hover:bg-primary/90"
               onClick={() => {
+                const paymentWindow = preparePaymentWindow()
                 setShowMonoConfirm(false)
-                void handlePurchase()
+                void handlePurchase(paymentWindow)
               }}
               disabled={isProcessing || isCheckingReadiness}
             >

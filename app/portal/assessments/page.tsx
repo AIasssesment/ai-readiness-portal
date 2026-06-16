@@ -97,7 +97,7 @@ export default async function AssessmentsPage() {
             {t(locale, "assessments.subtitle")}
           </p>
         </div>
-        <Link href="/">
+        <Link href="/portal/assessments/new">
           <Button className="gap-2">
             <Zap className="h-4 w-4" />
             {t(locale, "assessments.newAssessment")}
@@ -189,7 +189,7 @@ export default async function AssessmentsPage() {
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               {t(locale, "assessments.emptyDescription")}
             </p>
-            <Link href="/">
+            <Link href="/portal/assessments/new">
               <Button size="lg" className="gap-2">
                 <Zap className="h-5 w-5" />
                 {t(locale, "assessments.startFirst")}
