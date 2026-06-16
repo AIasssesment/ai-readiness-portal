@@ -278,7 +278,7 @@ export default async function OpportunitiesPage() {
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               {t(locale, "opps.emptyDescription")}
             </p>
-            <Link href="/">
+            <Link href="/portal/assessments/new">
               <Button size="lg">{t(locale, "opps.takeAssessment")}</Button>
             </Link>
           </CardContent>
