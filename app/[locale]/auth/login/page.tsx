@@ -13,6 +13,7 @@ import { useLanguage } from "@/components/language-provider"
 import type { TranslationKey } from "@/lib/i18n"
 import { localizedHomePath } from "@/lib/locale-path"
 import { toast } from "sonner"
+import { GoogleOAuthLink } from "@/components/auth/google-oauth-link"
 
 function GoogleIcon() {
   return (
@@ -161,10 +162,13 @@ export default function LoginPage() {
               variant="outline"
               className="w-full justify-center gap-2 text-foreground hover:text-foreground"
             >
-              <a href="/api/auth/google/start?next=/portal">
+              <GoogleOAuthLink
+                href="/api/auth/google/start?next=/portal"
+                className="inline-flex w-full items-center justify-center gap-2"
+              >
                 <GoogleIcon />
                 {t("auth.login.google")}
-              </a>
+              </GoogleOAuthLink>
             </Button>
             <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
