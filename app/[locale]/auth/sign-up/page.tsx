@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Brain, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 import { normalizeCompanyWebsiteInput } from "@/lib/utils"
+import { GoogleOAuthLink } from "@/components/auth/google-oauth-link"
 
 function GoogleIcon() {
   return (
@@ -139,10 +140,13 @@ export default function SignUpPage() {
               variant="outline"
               className="w-full justify-center gap-2 text-foreground hover:text-foreground"
             >
-              <a href="/api/auth/google/start?next=/portal">
+              <GoogleOAuthLink
+                href="/api/auth/google/start?next=/portal"
+                className="inline-flex w-full items-center justify-center gap-2"
+              >
                 <GoogleIcon />
                 {t("auth.signup.google")}
-              </a>
+              </GoogleOAuthLink>
             </Button>
             <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
