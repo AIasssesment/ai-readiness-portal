@@ -1,12 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from "jose"
 import { NextRequest, NextResponse } from "next/server"
+import {
+  clearLegacyOAuthCookies,
+  verifyGoogleOAuthState,
+} from "@/lib/auth/google-oauth-state"
 import { createSession } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
 import { LOCALE_COOKIE_NAME } from "@/lib/i18n"
-
-const OAUTH_STATE_COOKIE = "oauth_google_state"
-const OAUTH_VERIFIER_COOKIE = "oauth_google_verifier"
-const OAUTH_NEXT_COOKIE = "oauth_google_next"
 
 const googleJwks = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"))
 
@@ -19,7 +19,12 @@ type GoogleIdTokenClaims = {
 
 function loginRedirect(request: NextRequest, reason: string) {
   const locale = request.cookies.get(LOCALE_COOKIE_NAME)?.value === "uk" ? "uk" : "en"
-  return NextResponse.redirect(`${request.nextUrl.origin}/${locale}/auth/login?oauth_error=${reason}`)
+  console.warn("[google-oauth] callback failed:", reason)
+  const response = NextResponse.redirect(
+    `${request.nextUrl.origin}/${locale}/auth/login?oauth_error=${reason}`,
+  )
+  clearLegacyOAuthCookies(response)
+  return response
 }
 
 async function fetchGoogleTokens(code: string, redirectUri: string, codeVerifier: string) {
@@ -129,12 +134,12 @@ export async function GET(request: NextRequest) {
   if (error) return loginRedirect(request, "google_denied")
   if (!code || !state) return loginRedirect(request, "missing_code")
 
-  const savedState = request.cookies.get(OAUTH_STATE_COOKIE)?.value
-  const verifier = request.cookies.get(OAUTH_VERIFIER_COOKIE)?.value
-  const nextPath = request.cookies.get(OAUTH_NEXT_COOKIE)?.value || "/portal"
-  if (!savedState || !verifier || savedState !== state) {
+  const oauthState = await verifyGoogleOAuthState(state)
+  if (!oauthState) {
     return loginRedirect(request, "invalid_state")
   }
+
+  const { verifier, next: nextPath } = oauthState
 
   try {
     const redirectUri =
@@ -153,12 +158,10 @@ export async function GET(request: NextRequest) {
     await createSession(user)
 
     const response = NextResponse.redirect(`${request.nextUrl.origin}${nextPath}`)
-    response.cookies.delete(OAUTH_STATE_COOKIE)
-    response.cookies.delete(OAUTH_VERIFIER_COOKIE)
-    response.cookies.delete(OAUTH_NEXT_COOKIE)
+    clearLegacyOAuthCookies(response)
     return response
   } catch (e) {
-    console.error("google oauth callback error", e)
+    console.error("[google-oauth] callback error", e)
     return loginRedirect(request, "oauth_failed")
   }
 }

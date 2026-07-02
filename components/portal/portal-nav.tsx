@@ -37,6 +37,7 @@ import {
   Settings, 
   LogOut,
   User,
+  Users,
   Brain
 } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -96,12 +97,46 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, onNav
     (client?.contact_name && client.contact_name.trim()) ||
     user.email
 
-  const navItems = [
+  const mainNav = [
     { href: "/portal", label: t("portal.nav.dashboard"), icon: LayoutDashboard },
     { href: "/portal/assessments", label: t("portal.nav.assessments"), icon: FileText },
+    { href: "/portal/chat", label: t("portal.nav.chat"), icon: MessagesSquare },
     { href: "/portal/opportunities", label: t("portal.nav.opportunities"), icon: Lightbulb },
-    { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
   ]
+
+  const careerNav = [
+    { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
+    { href: "/portal/workforce", label: t("portal.nav.workforce"), icon: Users },
+  ]
+
+  const isNavActive = (href: string) =>
+    pathname === href || (href !== "/portal" && pathname.startsWith(href))
+
+  const renderNavItem = (item: { href: string; label: string; icon: typeof LayoutDashboard }) => {
+    const Icon = item.icon
+    const active = isNavActive(item.href)
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={() => onNavigate?.()}
+        className={cn(
+          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+          active
+            ? "bg-gradient-to-r from-primary/20 to-primary/5 text-primary ring-1 ring-inset ring-primary/25"
+            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+        )}
+      >
+        <Icon
+          className={cn(
+            "h-4 w-4 shrink-0 transition-colors",
+            active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+          )}
+        />
+        <span className="truncate">{item.label}</span>
+      </Link>
+    )
+  }
 
   const handleSignOut = async () => {
     await db.auth.signOut()
@@ -206,94 +241,74 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, onNav
         </Link>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col p-3">
-        <Link href="/" className="mb-3 block">
-          <Button variant="outline" size="sm" className="w-full justify-start">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 py-3">
+        <Link href="/portal/assessments/new" onClick={() => onNavigate?.()} className="mb-2 block px-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10 hover:text-foreground"
+          >
+            <FileText className="h-4 w-4 text-primary" />
             {t("portal.takeAssessment")}
           </Button>
         </Link>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="mt-3 mb-2 justify-start"
-          onClick={handleCreateChat}
-          disabled={isCreatingChat}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          <Plus className="mr-2 h-4 w-4" />
-          {t("portal.createChat")}
-        </Button>
+          <p className="px-3 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {t("portal.nav.sectionMain")}
+          </p>
+          <nav className="space-y-1 px-1">{mainNav.map(renderNavItem)}</nav>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="mb-3 hidden justify-start md:flex"
-          onClick={() => setSearchDialogOpen(true)}
-        >
-          <Search className="mr-2 h-4 w-4" />
-          {t("portal.chat.searchPlaceholder")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mb-3 justify-start md:hidden"
-          onClick={() => {
-            router.push("/portal/chat?openSearch=1")
-            onNavigate?.()
-          }}
-        >
-          <Search className="mr-2 h-4 w-4" />
-          {t("portal.chat.searchPlaceholder")}
-        </Button>
+          <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {t("portal.nav.sectionCareer")}
+          </p>
+          <nav className="space-y-1 px-1">{careerNav.map(renderNavItem)}</nav>
 
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href ||
-              (item.href !== "/portal" && pathname.startsWith(item.href))
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
-
-
-        <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-md border bg-muted/20">
-          <div className="border-b px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="mb-1 mt-4 flex items-center justify-between px-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               {t("portal.recently")}
             </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden h-6 w-6 text-muted-foreground hover:text-foreground md:flex"
+              onClick={() => setSearchDialogOpen(true)}
+              aria-label={t("portal.chat.searchPlaceholder")}
+            >
+              <Search className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground md:hidden"
+              onClick={() => {
+                router.push("/portal/chat?openSearch=1")
+                onNavigate?.()
+              }}
+              aria-label={t("portal.chat.searchPlaceholder")}
+            >
+              <Search className="h-3.5 w-3.5" />
+            </Button>
           </div>
-          <div
-            className="min-h-0 flex-1 overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
+
+          <div className="px-1">
             {recentChats.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {recentChats.map((chat) => (
                   <div
                     key={chat.id}
                     className={cn(
-                      "group flex items-center gap-1 rounded-md px-1 py-0.5",
+                      "group flex items-center gap-1 rounded-lg px-1 py-0.5 transition-colors",
                       activeConversationId === chat.id && "bg-muted",
                     )}
                   >
                     <Link
                       href={chat.href}
-                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      onClick={() => onNavigate?.()}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                     >
                       <MessagesSquare className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{chat.title}</span>
@@ -334,7 +349,7 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, onNav
                 ))}
               </div>
             ) : (
-              <p className="px-2 py-2 text-xs text-muted-foreground">
+              <p className="px-3 py-2 text-xs text-muted-foreground">
                 {t("portal.chat.noRecent")}
               </p>
             )}
@@ -342,7 +357,17 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, onNav
         </div>
       </div>
 
-      <div className="border-t p-3">
+      <div className="space-y-2 border-t p-3">
+        <Button
+          size="sm"
+          className="w-full justify-center gap-2 border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+          onClick={handleCreateChat}
+          disabled={isCreatingChat}
+        >
+          <Plus className="h-4 w-4" />
+          {t("portal.createChat")}
+        </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
