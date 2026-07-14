@@ -17,3 +17,4 @@
 | ADR | Заголовок | Статус |
 | --- | --- | --- |
 | [0001](0001-portal-sidebar-assessments-list.md) | Portal sidebar assessments list | Implemented |
+| [0002](0002-two-stage-ai-opportunities-pipeline.md) | Two-stage AI Opportunities pipeline with Gemini | Implemented |

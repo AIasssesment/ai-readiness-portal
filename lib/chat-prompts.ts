@@ -1,12 +1,8 @@
 import { generateObject } from "ai"
 import { z } from "zod"
-import { createOpenAI } from "@ai-sdk/openai"
+import { getFastLlmModel } from "@/lib/ai/model"
 import type { ContextData } from "@/lib/chat-context"
 import { t, type Locale, type TranslationKey } from "@/lib/i18n"
-
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
 
 const intentSchema = z.object({
   type: z.enum(["KPI_SUMMARY", "RISK_ANALYSIS", "ACTION_PLAN", "DATA_GAP", "GENERAL_QA"]),
@@ -40,7 +36,7 @@ export async function classifyChatIntent(userMessage: string, locale: Locale) {
 
   try {
     const result = await generateObject({
-      model: openai("gpt-4o-mini"),
+      model: getFastLlmModel(),
       schema: intentSchema,
       system: t(locale, "chat.classifier.system"),
       prompt: `User message:\n${trimmed}`,

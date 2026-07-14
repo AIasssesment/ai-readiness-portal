@@ -1,13 +1,9 @@
 import { generateObject } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
 import { z } from "zod"
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
-
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+import { getLlmModel, isGoogleAiConfigured } from "@/lib/ai/model"
 
 const RoleSchema = z.object({
   role_name: z.string().min(2),
@@ -124,6 +120,13 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    if (!isGoogleAiConfigured()) {
+      return NextResponse.json(
+        { error: "GOOGLE_GENERATIVE_AI_API_KEY is not configured" },
+        { status: 500 },
+      )
+    }
+
     const clients = await sql<Array<{ id: string; company_name: string; industry: string | null; company_size: string | null }>>`
       select id, company_name, industry, company_size
       from clients
@@ -210,7 +213,7 @@ Create role-level insights for this exact workforce list and write an executive 
 Mention the estimated at-risk headcount (${totalAtRiskHeadcount}) in the executive summary.`
 
     const { object } = await generateObject({
-      model: openai("gpt-4o"),
+      model: getLlmModel(),
       schema: ReportSchema,
       system: systemPrompt,
       prompt: userPrompt,

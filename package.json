@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:migrate": "node scripts/migrate.mjs up",
+    "db:migrate:status": "node scripts/migrate.mjs status",
+    "db:migrate:baseline": "node scripts/migrate.mjs baseline"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.54",
+    "@ai-sdk/google": "^3.0.92",
     "@ai-sdk/react": "^3.0.171",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.12",

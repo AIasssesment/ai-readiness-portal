@@ -1,15 +1,11 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
+import { getLlmModel, isGoogleAiConfigured } from "@/lib/ai/model"
 import { getChatContext } from "@/lib/chat-context"
 import { buildSystemPrompt, classifyChatIntent } from "@/lib/chat-prompts"
 import { getServerLocale } from "@/lib/i18n-server"
-
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
 
 async function getClientIdByUser(userId: string) {
   const clients = await sql<Array<{ id: string }>>`
@@ -80,6 +76,13 @@ export async function POST(request: Request) {
     const user = await getSessionUser()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (!isGoogleAiConfigured()) {
+      return NextResponse.json(
+        { error: "GOOGLE_GENERATIVE_AI_API_KEY is not configured" },
+        { status: 500 },
+      )
     }
 
     const body = (await request.json()) as { messages?: UIMessage[]; conversationId?: string }
@@ -161,7 +164,7 @@ export async function POST(request: Request) {
     const modelMessages = await convertToModelMessages(messages)
 
     const result = streamText({
-      model: openai("gpt-4o"),
+      model: getLlmModel(),
       system,
       messages: modelMessages,
       onFinish: async ({ text }) => {
