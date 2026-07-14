@@ -33,16 +33,16 @@ export function Nav({ onStartAssessment }: NavProps) {
   }, [])
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-border bg-background/90 px-6 py-4 backdrop-blur-xl md:px-12">
-      <div className="font-[family-name:var(--font-syne)] text-xl font-extrabold tracking-tight text-primary">
+    <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4 md:px-12">
+      <div className="min-w-0 truncate font-[family-name:var(--font-syne)] text-base font-extrabold tracking-tight text-primary sm:text-xl">
         RPA Community
       </div>
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
         {!isCheckingAuth && (
           <>
             {isLoggedIn ? (
               <Link href="/portal">
-                <Button variant="outline" size="sm" className="gap-2 rounded-lg">
+                <Button variant="outline" size="sm" className="gap-2 rounded-lg px-2.5 sm:px-3">
                   <LayoutDashboard className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('nav.myPortal')}</span>
                 </Button>
@@ -50,15 +50,15 @@ export function Nav({ onStartAssessment }: NavProps) {
             ) : (
               <>
                 <Link href={`/${locale}/auth/login`}>
-                  <Button variant="ghost" size="sm" className="gap-2 rounded-lg">
+                  <Button variant="ghost" size="sm" className="gap-2 rounded-lg px-2.5 sm:px-3">
                     <LogIn className="h-4 w-4" />
                     <span className="hidden sm:inline">{t('nav.signIn')}</span>
                   </Button>
                 </Link>
-                <Link href={`/${locale}/auth/sign-up`}>
+                {/* Full sign-up CTA only from sm — on phones it crowded out Apply */}
+                <Link href={`/${locale}/auth/sign-up`} className="hidden sm:inline-flex">
                   <Button variant="outline" size="sm" className="rounded-lg">
-                    <span className="hidden sm:inline">{t('nav.getStarted')}</span>
-                    <span className="sm:hidden">{t('nav.signUpShort')}</span>
+                    {t('nav.getStarted')}
                   </Button>
                 </Link>
               </>
@@ -67,9 +67,10 @@ export function Nav({ onStartAssessment }: NavProps) {
         )}
         <Button
           onClick={onStartAssessment}
-          className="rounded-lg bg-primary px-4 py-2 font-[family-name:var(--font-syne)] text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:px-5"
+          className="rounded-lg bg-primary px-3 py-2 font-[family-name:var(--font-syne)] text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:px-5"
         >
-          {t('nav.applyNow')}
+          <span className="sm:hidden">{t('nav.applyNowShort')}</span>
+          <span className="hidden sm:inline">{t('nav.applyNow')}</span>
         </Button>
       </div>
     </nav>
