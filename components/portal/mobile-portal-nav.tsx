@@ -33,16 +33,25 @@ type RecentChat = {
   href: string
 }
 
+type RecentAssessment = {
+  id: string
+  score: number
+  label: string
+  href: string
+}
+
 export function MobilePortalNav({
   user,
   client,
   profileDisplayName,
   recentChats,
+  recentAssessments,
 }: {
   user: AuthUser
   client: Client | null
   profileDisplayName?: string | null
   recentChats: RecentChat[]
+  recentAssessments: RecentAssessment[]
 }) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
@@ -73,6 +82,7 @@ export function MobilePortalNav({
             client={client}
             profileDisplayName={profileDisplayName}
             recentChats={recentChats}
+            recentAssessments={recentAssessments}
             onNavigate={() => setOpen(false)}
           />
         </div>

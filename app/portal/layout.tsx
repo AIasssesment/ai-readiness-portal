@@ -18,6 +18,12 @@ type ConversationRow = {
   title: string
 }
 
+type AssessmentNavRow = {
+  id: string
+  created_at: string
+  overall_score: number
+}
+
 export default async function PortalLayout({
   children,
 }: {
@@ -68,17 +74,40 @@ export default async function PortalLayout({
     href: `/portal/chat?conversationId=${chat.id}`,
   }))
 
+  // Latest assessments for the sidebar (max 4, "All" links to the full list).
+  const recentAssessments =
+    typedClient
+      ? await sql<AssessmentNavRow[]>`
+          select id, created_at, overall_score
+          from assessments
+          where client_id = ${typedClient.id}
+          order by created_at desc
+          limit 4
+        `
+      : []
+
+  const recentAssessmentsForNav = recentAssessments.map((assessment) => ({
+    id: assessment.id,
+    score: assessment.overall_score,
+    label: new Date(assessment.created_at).toLocaleDateString(locale === "uk" ? "uk-UA" : "en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    href: `/portal/assessments/${assessment.id}`,
+  }))
+
   return (
     <LanguageProvider initialLocale={locale}>
     <div className="min-h-screen bg-muted/30 md:flex md:h-screen md:overflow-hidden">
       <div className="hidden h-screen w-[280px] shrink-0 md:block">
-        <PortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} />
+        <PortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} recentAssessments={recentAssessmentsForNav} />
       </div>
 
       <div className="min-w-0 flex-1 md:h-screen md:overflow-y-auto">
         <div className="border-b bg-background px-4 py-3 md:hidden">
           <div className="flex items-center justify-end">
-            <MobilePortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} />
+            <MobilePortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} recentAssessments={recentAssessmentsForNav} />
           </div>
         </div>
         <main className="px-4 py-8 md:px-8">
