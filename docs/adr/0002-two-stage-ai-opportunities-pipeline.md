@@ -80,6 +80,7 @@ Rationale:
 - SQL: `scripts/012_company_intelligence_and_opportunities.sql`, `scripts/013_opportunity_details.jsonb.sql`
 - Code: `lib/opportunities/*`, `lib/ai/model.ts`, `app/api/opportunities/**`, portal Opportunities UI
 - Parallel pattern: job-risk generate (`generateObject` + deterministic scores)
+- Related: [docs/database-migrations.md](../database-migrations.md) (`npm run db:migrate`)
 - Supersedes ad-hoc heuristic-only opportunity inserts as the primary generation path (assessment heuristics may still seed early rows)
 
 ## 10) Appendix / References
