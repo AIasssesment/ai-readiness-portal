@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback, useState } from 'react'
 import { 
   TrendingUp, 
   AlertTriangle, 
@@ -13,8 +14,10 @@ import {
   FileText,
   CheckCircle2,
   ArrowRight,
-  Download
+  Download,
+  Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -30,21 +33,31 @@ export type ExtendedReportProps = {
 }
 
 const severityColors = {
-  low: 'bg-accent/20 text-accent',
-  medium: 'bg-warning/20 text-warning-foreground',
-  high: 'bg-destructive/20 text-destructive',
+  low: 'border-transparent bg-emerald-500/20 text-emerald-300',
+  medium: 'border-transparent bg-amber-500/25 text-amber-200',
+  high: 'border-transparent bg-red-500/20 text-red-300',
 }
 
-const priorityColors = {
-  essential: 'bg-destructive/20 text-destructive border-destructive/30',
-  recommended: 'bg-primary/20 text-primary border-primary/30',
-  'nice-to-have': 'bg-muted text-muted-foreground border-muted',
+const priorityBadgeColors = {
+  essential: 'border-transparent bg-red-500/20 text-red-300',
+  recommended: 'border-transparent bg-teal-500/20 text-teal-300',
+  'nice-to-have': 'border-transparent bg-zinc-500/25 text-zinc-200',
 }
 
 const implementationColors = {
-  'quick-win': 'bg-accent text-accent-foreground',
-  'medium-term': 'bg-primary text-primary-foreground',
-  'long-term': 'bg-muted-foreground text-background',
+  'quick-win': 'border-transparent bg-emerald-500/20 text-emerald-300',
+  'medium-term': 'border-transparent bg-sky-500/20 text-sky-300',
+  'long-term': 'border-transparent bg-zinc-500/25 text-zinc-200',
+}
+
+
+function sanitizeFilenamePart(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'company'
 }
 
 export function ExtendedReport({
@@ -55,6 +68,30 @@ export function ExtendedReport({
   const resultsFromStore = useAssessmentStore((state) => state.results)
   const extendedReport = extendedProp ?? extendedReportFromStore
   const results = resultsProp ?? resultsFromStore
+
+  const [exporting, setExporting] = useState(false)
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!results || !extendedReport || exporting) return
+
+    setExporting(true)
+
+    try {
+      const company = sanitizeFilenamePart(results.companyInfo.companyName || 'report')
+      const { exportExtendedReportToPdf } = await import('@/lib/export-report-pdf')
+      await exportExtendedReportToPdf({
+        report: extendedReport,
+        results,
+        filename: `ai-readiness-report-${company}`,
+      })
+      toast.success('PDF downloaded')
+    } catch (error) {
+      console.error('PDF export failed', error)
+      toast.error('Could not generate PDF. Try again.')
+    } finally {
+      setExporting(false)
+    }
+  }, [exporting, extendedReport, results])
 
   if (!extendedReport || !results) return null
 
@@ -72,10 +109,20 @@ export function ExtendedReport({
   } = extendedReport
 
   return (
-    <div className="space-y-6">
+    <>
+      {exporting ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[2px]">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-xl">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm font-medium text-foreground">Generating PDF…</span>
+          </div>
+        </div>
+      ) : null}
+
+    <div className="space-y-6 bg-background border border-border rounded-lg p-4">
       {/* Header */}
-      <Card className="border-0 shadow-xl bg-card overflow-hidden">
-        <div className="bg-accent px-6 py-4">
+      <Card className="border-0 bg-transparent overflow-hidden">
+        <div className="bg-accent px-6 py-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-6 w-6 text-accent-foreground" />
@@ -86,9 +133,23 @@ export function ExtendedReport({
                 </p>
               </div>
             </div>
-            <Button variant="secondary" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Download PDF
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={cn(
+                'gap-2 bg-background/90 text-foreground hover:bg-background',
+                exporting && 'pointer-events-none opacity-70',
+              )}
+              onClick={() => void handleDownloadPdf()}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {exporting ? 'Preparing PDF…' : 'Download PDF'}
             </Button>
           </div>
         </div>
@@ -103,8 +164,8 @@ export function ExtendedReport({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-            <p className="text-lg font-medium text-foreground leading-relaxed">
+          <div className="rounded-lg border border-primary/25 bg-primary/10 p-5">
+            <p className="text-lg font-medium leading-relaxed text-foreground">
               {executiveSummary.headline}
             </p>
           </div>
@@ -140,11 +201,15 @@ export function ExtendedReport({
             </div>
           </div>
 
-          <div className="border-t border-border pt-4">
-            <h4 className="font-semibold text-foreground mb-3">Next Steps</h4>
+          <div className="border-t border-border pt-4 pb-1">
+            <h4 className="mb-3 font-semibold text-foreground">Next Steps</h4>
             <div className="flex flex-wrap gap-2">
               {executiveSummary.nextSteps.map((step, i) => (
-                <Badge key={i} variant="outline" className="text-sm py-1.5 px-3">
+                <Badge
+                  key={i}
+                  variant="outline"
+                  className="max-w-full whitespace-normal border-border bg-secondary/50 px-3 py-2 text-left text-sm text-foreground"
+                >
                   {i + 1}. {step}
                 </Badge>
               ))}
@@ -229,11 +294,11 @@ export function ExtendedReport({
                 <div key={i} className="p-3 rounded-lg bg-secondary/30">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-sm text-foreground">{factor.name}</span>
-                    <Badge className={cn('text-xs', severityColors[factor.severity])}>
+                    <Badge variant="secondary" className={cn('text-xs capitalize', severityColors[factor.severity])}>
                       {factor.severity}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">{factor.description}</p>
+                  <p className="text-xs text-foreground/70">{factor.description}</p>
                 </div>
               ))}
             </div>
@@ -277,7 +342,7 @@ export function ExtendedReport({
                     </td>
                     <td className="py-3 px-4 text-sm font-medium text-accent">{opp.estimatedROI}</td>
                     <td className="py-3 px-4">
-                      <Badge className={cn('text-xs', implementationColors[opp.implementation])}>
+                      <Badge variant="secondary" className={cn('text-xs capitalize', implementationColors[opp.implementation])}>
                         {opp.implementation.replace('-', ' ')}
                       </Badge>
                     </td>
@@ -328,24 +393,24 @@ export function ExtendedReport({
       <Card className="border-0 shadow-lg bg-card">
         <Tabs defaultValue="techstack" className="w-full">
           <CardHeader>
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="techstack" className="gap-2">
+            <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-secondary/60 p-1">
+              <TabsTrigger value="techstack" className="gap-2 text-foreground/80 data-[state=active]:bg-background data-[state=active]:text-foreground">
                 <Layers className="h-4 w-4" />
                 Tech Stack
               </TabsTrigger>
-              <TabsTrigger value="actionplan" className="gap-2">
+              <TabsTrigger value="actionplan" className="gap-2 text-foreground/80 data-[state=active]:bg-background data-[state=active]:text-foreground">
                 <Calendar className="h-4 w-4" />
                 90-Day Plan
               </TabsTrigger>
-              <TabsTrigger value="benchmark" className="gap-2">
+              <TabsTrigger value="benchmark" className="gap-2 text-foreground/80 data-[state=active]:bg-background data-[state=active]:text-foreground">
                 <BarChart3 className="h-4 w-4" />
                 Benchmarks
               </TabsTrigger>
-              <TabsTrigger value="disruption" className="gap-2">
+              <TabsTrigger value="disruption" className="gap-2 text-foreground/80 data-[state=active]:bg-background data-[state=active]:text-foreground">
                 <AlertTriangle className="h-4 w-4" />
                 AI Disruption
               </TabsTrigger>
-              <TabsTrigger value="roadmap" className="gap-2">
+              <TabsTrigger value="roadmap" className="gap-2 text-foreground/80 data-[state=active]:bg-background data-[state=active]:text-foreground">
                 <Map className="h-4 w-4" />
                 Roadmap
               </TabsTrigger>
@@ -353,26 +418,31 @@ export function ExtendedReport({
           </CardHeader>
 
           <CardContent>
-            {/* Tech Stack */}
-            <TabsContent value="techstack" className="mt-0 space-y-4">
+            <TabsContent value="techstack" className="mt-0 space-y-3">
               {techStack.map((item, i) => (
-                <div key={i} className={cn(
-                  'p-4 rounded-lg border',
-                  priorityColors[item.priority]
-                )}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{item.category}</p>
+                <div
+                  key={i}
+                  className="rounded-lg border border-border bg-secondary/40 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">
+                        {item.category}
+                      </p>
                       <p className="font-semibold text-foreground">{item.tool}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                      <p className="mt-1 text-sm text-foreground/75">{item.description}</p>
                     </div>
-                    <Badge variant="outline" className="capitalize">{item.priority}</Badge>
+                    <Badge
+                      variant="secondary"
+                      className={cn('shrink-0 capitalize', priorityBadgeColors[item.priority])}
+                    >
+                      {item.priority.replace(/-/g, ' ')}
+                    </Badge>
                   </div>
                 </div>
               ))}
             </TabsContent>
 
-            {/* 90-Day Action Plan */}
             <TabsContent value="actionplan" className="mt-0 space-y-6">
               {actionPlan.map((phase, i) => (
                 <div key={i} className="relative pl-8 pb-6 last:pb-0">
@@ -406,89 +476,102 @@ export function ExtendedReport({
               ))}
             </TabsContent>
 
-            {/* Benchmarks */}
             <TabsContent value="benchmark" className="mt-0 space-y-4">
               {benchmark.map((item, i) => (
-                <div key={i} className="p-4 bg-secondary/30 rounded-lg">
-                  <p className="font-medium text-foreground mb-3">{item.metric}</p>
-                  <div className="space-y-2">
+                <div key={i} className="rounded-lg bg-secondary/40 p-4">
+                  <p className="mb-3 font-medium text-foreground">{item.metric}</p>
+                  <div className="space-y-2.5">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground w-28">Your Score</span>
-                      <div className="flex-1 bg-muted rounded-full h-3 relative">
-                        <div 
-                          className="absolute h-full bg-primary rounded-full"
+                      <span className="w-28 shrink-0 text-sm text-foreground/80">Your Score</span>
+                      <div className="relative h-3 flex-1 rounded-full bg-muted">
+                        <div
+                          className="absolute h-full rounded-full bg-primary"
                           style={{ width: `${item.yourScore}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium text-foreground w-12">{item.yourScore}%</span>
+                      <span className="w-12 text-right text-sm font-medium text-foreground">
+                        {item.yourScore}%
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground w-28">Industry Avg</span>
-                      <div className="flex-1 bg-muted rounded-full h-3 relative">
-                        <div 
-                          className="absolute h-full bg-muted-foreground/50 rounded-full"
+                      <span className="w-28 shrink-0 text-sm text-foreground/80">Industry Avg</span>
+                      <div className="relative h-3 flex-1 rounded-full bg-muted">
+                        <div
+                          className="absolute h-full rounded-full bg-zinc-400"
                           style={{ width: `${item.industryAverage}%` }}
                         />
                       </div>
-                      <span className="text-sm text-muted-foreground w-12">{item.industryAverage}%</span>
+                      <span className="w-12 text-right text-sm font-medium text-foreground/90">
+                        {item.industryAverage}%
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground w-28">Top Performers</span>
-                      <div className="flex-1 bg-muted rounded-full h-3 relative">
-                        <div 
-                          className="absolute h-full bg-accent rounded-full"
+                      <span className="w-28 shrink-0 text-sm text-foreground/80">Top Performers</span>
+                      <div className="relative h-3 flex-1 rounded-full bg-muted">
+                        <div
+                          className="absolute h-full rounded-full bg-accent"
                           style={{ width: `${item.topPerformers}%` }}
                         />
                       </div>
-                      <span className="text-sm text-accent w-12">{item.topPerformers}%</span>
+                      <span className="w-12 text-right text-sm font-medium text-accent">
+                        {item.topPerformers}%
+                      </span>
                     </div>
                   </div>
                 </div>
               ))}
             </TabsContent>
 
-            {/* AI Disruption */}
             <TabsContent value="disruption" className="mt-0 space-y-4">
               <div className={cn(
-                'p-4 rounded-lg border-2',
-                disruptionRisk.overallRisk === 'high' && 'border-destructive/50 bg-destructive/5',
-                disruptionRisk.overallRisk === 'medium' && 'border-warning/50 bg-warning/5',
-                disruptionRisk.overallRisk === 'low' && 'border-accent/50 bg-accent/5'
+                'rounded-lg border-2 p-4',
+                disruptionRisk.overallRisk === 'high' && 'border-red-500/40 bg-red-500/10',
+                disruptionRisk.overallRisk === 'medium' && 'border-amber-500/40 bg-amber-500/10',
+                disruptionRisk.overallRisk === 'low' && 'border-emerald-500/40 bg-emerald-500/10',
               )}>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="font-semibold text-foreground">Overall AI Disruption Risk</span>
-                  <Badge className={cn(severityColors[disruptionRisk.overallRisk], 'uppercase')}>
+                  <Badge
+                    variant="secondary"
+                    className={cn(severityColors[disruptionRisk.overallRisk], 'uppercase')}
+                  >
                     {disruptionRisk.overallRisk}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{disruptionRisk.timelineEstimate}</p>
+                <p className="text-sm text-foreground/75">{disruptionRisk.timelineEstimate}</p>
               </div>
 
               <div className="space-y-3">
                 <h4 className="font-semibold text-foreground">Roles at Risk</h4>
                 {disruptionRisk.affectedRoles.map((role, i) => (
-                  <div key={i} className="p-4 bg-secondary/30 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={i} className="rounded-lg bg-secondary/40 p-4">
+                    <div className="mb-2 flex items-center justify-between gap-3">
                       <span className="font-medium text-foreground">{role.role}</span>
                       <div className="flex items-center gap-2">
                         <Progress value={role.riskLevel} className="h-2 w-20" />
-                        <span className={cn(
-                          'text-sm font-medium',
-                          role.riskLevel >= 70 ? 'text-destructive' : role.riskLevel >= 50 ? 'text-warning-foreground' : 'text-accent'
-                        )}>
+                        <span
+                          className={cn(
+                            'w-10 text-right text-sm font-semibold tabular-nums',
+                            role.riskLevel >= 70
+                              ? 'text-red-300'
+                              : role.riskLevel >= 50
+                                ? 'text-amber-200'
+                                : 'text-emerald-300',
+                          )}
+                        >
                           {role.riskLevel}%
                         </span>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium">Recommendation:</span> {role.recommendation}
+                    <p className="text-sm text-foreground/75">
+                      <span className="font-medium text-foreground">Recommendation:</span>{' '}
+                      {role.recommendation}
                     </p>
                   </div>
                 ))}
               </div>
             </TabsContent>
 
-            {/* Roadmap */}
             <TabsContent value="roadmap" className="mt-0">
               <div className="grid gap-4 md:grid-cols-4">
                 {roadmap.map((quarter, i) => (
@@ -518,5 +601,6 @@ export function ExtendedReport({
         </Tabs>
       </Card>
     </div>
+    </>
   )
 }

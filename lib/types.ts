@@ -1,9 +1,14 @@
 export interface CompanyInfo {
   firstName: string
   lastName: string
+  /** Display name for the company (UI / clients.company_name). */
   companyName: string
+  /** Public website URL (clients.website) — used for research / "public profile". */
+  website?: string
   industry?: string
   employeeCount?: string
+  /** Short "what the company does" (clients.description). */
+  description?: string
   email: string
 }
 

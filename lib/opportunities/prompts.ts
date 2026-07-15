@@ -32,10 +32,10 @@ export function buildCompanyIntelligenceUserPrompt(input: {
   linkedin?: string | null
   industry: string | null
   companySize: string | null
+  description?: string | null
   headquarters?: string | null
   countries?: string[]
   technologies?: string[]
-  description?: string | null
   overallScore: number
   readinessLevel: string
   dimensionScores: unknown
@@ -47,11 +47,11 @@ export function buildCompanyIntelligenceUserPrompt(input: {
 - Website: ${input.website || "N/A"}
 - LinkedIn: ${input.linkedin || "N/A"}
 - Industry: ${input.industry || "N/A"}
+- What the company does: ${input.description || "N/A"}
 - Employees: ${input.companySize || "N/A"}
 - Headquarters: ${input.headquarters || "N/A"}
 - Countries: ${(input.countries || []).join(", ") || "N/A"}
 - Technologies: ${(input.technologies || []).join(", ") || "N/A"}
-- Description: ${input.description || "N/A"}
 
 Portal assessment context (confirmed in product data — keep in assessment_context):
 - AI maturity: ${input.overallScore}/100 (${input.readinessLevel})
@@ -61,7 +61,8 @@ ${input.assessmentAnswerHighlights.map((line) => `  - ${line}`).join("\n") || " 
 - Workforce:
 ${JSON.stringify(input.workforce || [], null, 2)}
 
-Research and complete the company profile. Use web search for public facts; do not invent.`
+Research and complete the company profile. Use web search for public facts; do not invent.
+Prefer the stated industry and description over generic guesses.`
 }
 
 export const OPPORTUNITY_GENERATOR_SYSTEM = `You are an AI Transformation Consultant who identifies high-value, realistic

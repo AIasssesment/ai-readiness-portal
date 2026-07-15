@@ -6,15 +6,26 @@ import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn, normalizeCompanyWebsiteInput } from '@/lib/utils'
 import { parseApiErrorMessage } from '@/lib/http/parse-api-error-message'
-
+import { EMPLOYEE_RANGES, INDUSTRIES } from '@/lib/assessment-data'
 import { useAssessmentStore } from '@/lib/assessment-store'
 import type { CompanyInfo } from '@/lib/types'
 import { useLanguage } from '@/components/language-provider'
 
 const neonCtaButtonClass =
   'w-full rounded-xl border-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-4 py-4 font-[family-name:var(--font-syne)] text-base font-bold !whitespace-normal leading-tight text-zinc-950 shadow-[0_0_28px_-4px_rgba(45,212,191,0.55)] transition hover:brightness-105 hover:shadow-[0_0_40px_-2px_rgba(45,212,191,0.7)] sm:text-lg'
+
+function companyLabelFromWebsite(urlStr: string): string {
+  try {
+    const u = new URL(urlStr)
+    return u.hostname.replace(/^www\./i, '') || urlStr.trim()
+  } catch {
+    return urlStr.trim()
+  }
+}
 
 export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter()
@@ -24,8 +35,10 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     firstName: '',
     lastName: '',
     companyName: '',
+    website: '',
     industry: '',
     employeeCount: '',
+    description: '',
     email: '',
   })
   const [error, setError] = useState<string | null>(null)
@@ -34,9 +47,20 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const companyWebsite = normalizeCompanyWebsiteInput(formData.companyName)
+    const companyWebsite = normalizeCompanyWebsiteInput(formData.website || formData.companyName)
+    const industry = formData.industry?.trim() || ''
+    const description = formData.description?.trim() || ''
+    const employeeCount = formData.employeeCount?.trim() || ''
 
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !companyWebsite) {
+    if (
+      !formData.firstName.trim() ||
+      !formData.lastName.trim() ||
+      !formData.email.trim() ||
+      !companyWebsite ||
+      !industry ||
+      !description ||
+      !employeeCount
+    ) {
       setError(t('companyForm.errorRequired'))
       return
     }
@@ -60,6 +84,8 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     setError(null)
     setIsProvisioning(true)
 
+    const displayName = companyLabelFromWebsite(companyWebsite)
+
     try {
       const res = await fetch('/api/assessment/provision-account', {
         method: 'POST',
@@ -69,7 +95,11 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           email: formData.email.trim(),
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
-          companyName: companyWebsite,
+          companyName: displayName,
+          website: companyWebsite,
+          industry,
+          companySize: employeeCount,
+          description,
           locale,
         }),
       })
@@ -91,7 +121,14 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
 
       toast.success(t('companyForm.accountCreatedToast'))
       window.dispatchEvent(new Event('portal-auth-changed'))
-      setCompanyInfo({ ...formData, companyName: companyWebsite })
+      setCompanyInfo({
+        ...formData,
+        companyName: displayName,
+        website: companyWebsite,
+        industry,
+        employeeCount,
+        description,
+      })
     } catch {
       setError(t('companyForm.provisionFailed'))
     } finally {
@@ -171,7 +208,7 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
 
         <div>
           <label htmlFor="companyUrl" className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            {t('companyForm.companyName')}
+            {t('companyForm.website')}
           </label>
           <Input
             id="companyUrl"
@@ -180,10 +217,69 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             autoComplete="url"
             inputMode="url"
             placeholder={t('companyForm.phWebsite')}
-            value={formData.companyName}
-            onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+            value={formData.website}
+            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
             className="h-12 border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="industry" className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              {t('companyForm.industry')}
+            </label>
+            <Select
+              value={formData.industry || undefined}
+              onValueChange={(value) => setFormData({ ...formData, industry: value })}
+            >
+              <SelectTrigger id="industry" className="h-12 border-border bg-secondary">
+                <SelectValue placeholder={t('companyForm.phIndustry')} />
+              </SelectTrigger>
+              <SelectContent>
+                {INDUSTRIES.map((industry) => (
+                  <SelectItem key={industry} value={industry}>
+                    {industry}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="companySize" className="mb-1.5 block text-sm font-medium text-muted-foreground">
+              {t('companyForm.companySize')}
+            </label>
+            <Select
+              value={formData.employeeCount || undefined}
+              onValueChange={(value) => setFormData({ ...formData, employeeCount: value })}
+            >
+              <SelectTrigger id="companySize" className="h-12 border-border bg-secondary">
+                <SelectValue placeholder={t('companyForm.phCompanySize')} />
+              </SelectTrigger>
+              <SelectContent>
+                {EMPLOYEE_RANGES.map((size) => (
+                  <SelectItem key={size} value={size}>
+                    {size} {t('companyForm.employeesSuffix')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-muted-foreground">
+            {t('companyForm.description')}
+          </label>
+          <Textarea
+            id="description"
+            rows={3}
+            maxLength={500}
+            placeholder={t('companyForm.phDescription')}
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            className="border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">{t('companyForm.descriptionHint')}</p>
         </div>
 
         {error && (

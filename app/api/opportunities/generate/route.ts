@@ -21,6 +21,7 @@ async function runCompanyIntelligence(input: {
   website: string | null
   industry: string | null
   companySize: string | null
+  description: string | null
   overallScore: number
   readinessLevel: string
   dimensionScores: unknown
@@ -32,6 +33,7 @@ async function runCompanyIntelligence(input: {
     website: input.website,
     industry: input.industry,
     companySize: input.companySize,
+    description: input.description,
     overallScore: input.overallScore,
     readinessLevel: input.readinessLevel,
     dimensionScores: input.dimensionScores,
@@ -115,9 +117,11 @@ export async function POST() {
         company_name: string
         industry: string | null
         company_size: string | null
+        website: string | null
+        description: string | null
       }>
     >`
-      select id, company_name, industry, company_size
+      select id, company_name, industry, company_size, website, description
       from clients
       where user_id = ${user.id}
       limit 1
@@ -163,13 +167,16 @@ export async function POST() {
     `
 
     const assessmentAnswerHighlights = buildAssessmentAnswerHighlights(latestAssessment.answers)
-    const website = extractWebsiteCandidate(latestAssessment.company_info, client.company_name)
+    const website =
+      client.website ||
+      extractWebsiteCandidate(latestAssessment.company_info, client.company_name)
 
     const intelligence = await runCompanyIntelligence({
       companyName: client.company_name,
       website,
       industry: client.industry,
       companySize: client.company_size,
+      description: client.description,
       overallScore: latestAssessment.overall_score,
       readinessLevel: latestAssessment.readiness_level,
       dimensionScores: latestAssessment.dimension_scores,

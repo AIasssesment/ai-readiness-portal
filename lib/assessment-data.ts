@@ -1,14 +1,21 @@
 import type { AssessmentQuestion } from './types'
 
+/** Shared industry list for assessment step 1 and Settings. */
 export const INDUSTRIES = [
   'Finance / Banking',
   'Healthcare / Insurance',
   'Manufacturing / Logistics',
   'Retail / E-commerce',
   'SaaS / Technology',
+  'Professional Services',
+  'Education',
+  'Real Estate',
+  'Transportation',
+  'Energy',
   'Other',
 ]
 
+/** Shared company-size bands for assessment step 1 and Settings. */
 export const EMPLOYEE_RANGES = [
   '1-50',
   '51-500',

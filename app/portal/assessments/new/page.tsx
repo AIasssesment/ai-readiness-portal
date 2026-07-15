@@ -8,6 +8,8 @@ type ClientRow = {
   contact_email: string
   industry: string | null
   company_size: string | null
+  website: string | null
+  description: string | null
 }
 
 export default async function NewPortalAssessmentPage() {
@@ -27,6 +29,8 @@ export default async function NewPortalAssessmentPage() {
       contactEmail={typedClient?.contact_email || user?.email || ""}
       industry={typedClient?.industry}
       companySize={typedClient?.company_size}
+      website={typedClient?.website}
+      description={typedClient?.description}
     />
   )
 }

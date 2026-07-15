@@ -76,10 +76,11 @@ export default async function AssessmentsPage() {
     .eq("client_id", (client as { id?: string } | null)?.id)
     .order("created_at", { ascending: false })
   const typedAssessments = (assessments as unknown as AssessmentRow[]) || []
+  const typedClient = client as { id?: string; has_extended_access?: boolean } | null
   const { data: reportRequests } = await (db as any)
     .from("report_requests")
     .select()
-    .eq("client_id", (client as { id?: string } | null)?.id)
+    .eq("client_id", typedClient?.id)
 
   const unlockedAssessmentIds = new Set(
     ((reportRequests as unknown as ReportRequestRow[] | null) ?? [])
@@ -87,6 +88,10 @@ export default async function AssessmentsPage() {
       .map((row) => row.assessment_id)
       .filter((id): id is string => Boolean(id)),
   )
+  const clientHasExtendedAccess = Boolean(typedClient?.has_extended_access)
+
+  const isAssessmentUnlocked = (assessmentId: string) =>
+    clientHasExtendedAccess || unlockedAssessmentIds.has(assessmentId)
 
   return (
     <div className="space-y-8">
@@ -143,7 +148,7 @@ export default async function AssessmentsPage() {
                           <div className="text-xs text-muted-foreground">{t(locale, "assessments.overallScore")}</div>
                     </div>
                     
-                    {unlockedAssessmentIds.has(assessment.id) ? (
+                    {isAssessmentUnlocked(assessment.id) ? (
                       <Link href={`/portal/assessments/${assessment.id}`}>
                         <Button variant="outline" className="gap-2">
                           {t(locale, "assessments.viewReport")}
@@ -154,7 +159,7 @@ export default async function AssessmentsPage() {
                       <UnlockReportButton
                         label={t(locale, "assessments.unlockReport")}
                         className="gap-2"
-                        clientId={(client as { id?: string } | null)?.id}
+                        clientId={typedClient?.id}
                         assessmentId={assessment.id}
                         mode="charge_and_manual"
                       />
