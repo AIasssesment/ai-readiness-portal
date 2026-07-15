@@ -39,16 +39,23 @@ export async function POST(request: Request) {
       firstName?: string
       lastName?: string
       companyName?: string
+      website?: string
+      industry?: string
+      companySize?: string
+      description?: string
       locale?: string
     }
 
     const email = String(body.email ?? "").trim().toLowerCase()
     const firstName = String(body.firstName ?? "").trim()
     const lastName = String(body.lastName ?? "").trim()
-    const companyWebsite = String(body.companyName ?? "").trim()
+    const companyWebsite = String(body.website ?? body.companyName ?? "").trim()
+    const industry = String(body.industry ?? "").trim()
+    const companySize = String(body.companySize ?? "").trim()
+    const description = String(body.description ?? "").trim()
     const locale: Locale = body.locale === "uk" ? "uk" : "en"
 
-    if (!email || !firstName || !lastName || !companyWebsite) {
+    if (!email || !firstName || !lastName || !companyWebsite || !industry || !description || !companySize) {
       return apiErrors.badRequest("Missing required fields")
     }
 
@@ -64,7 +71,7 @@ export async function POST(request: Request) {
     }
 
     const contactName = `${firstName} ${lastName}`.trim()
-    const companyName = companyLabelFromWebsite(companyWebsite)
+    const companyName = String(body.companyName ?? "").trim() || companyLabelFromWebsite(companyWebsite)
     const plainPassword = generateTempPassword()
     const passwordHash = await hashPassword(plainPassword)
     const expiresAt = new Date(Date.now() + PROVISION_TTL_HOURS * 60 * 60 * 1000)
@@ -93,8 +100,14 @@ export async function POST(request: Request) {
       `
 
       await tx`
-        insert into clients (id, user_id, company_name, contact_name, contact_email)
-        values (gen_random_uuid(), ${userId}, ${companyName}, ${contactName}, ${email})
+        insert into clients (
+          id, user_id, company_name, contact_name, contact_email,
+          industry, company_size, website, description
+        )
+        values (
+          gen_random_uuid(), ${userId}, ${companyName}, ${contactName}, ${email},
+          ${industry}, ${companySize}, ${companyWebsite}, ${description}
+        )
       `
 
       await tx`

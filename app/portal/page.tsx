@@ -122,8 +122,9 @@ export default async function PortalDashboard() {
       .filter((id): id is string => Boolean(id)),
   )
 
+  const clientHasExtendedAccess = Boolean(typedClient?.has_extended_access)
   const latestAssessmentUnlocked = latestAssessment
-    ? unlockedAssessmentIds.has(latestAssessment.id)
+    ? clientHasExtendedAccess || unlockedAssessmentIds.has(latestAssessment.id)
     : false
 
   // Calculate stats

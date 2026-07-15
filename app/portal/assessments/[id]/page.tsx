@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { ArrowLeft, Download, Calendar } from "lucide-react"
+import { ArrowLeft, Calendar } from "lucide-react"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
 import { PortalAssessmentFullReport } from "@/components/portal/portal-assessment-full-report"
 import { dbAssessmentRowToResults } from "@/lib/assessment/db-assessment-to-results"
@@ -97,9 +97,11 @@ export default async function AssessmentDetailPage({
     .eq("client_id", typedClient?.id ?? "")
     .eq("assessment_id", id)
 
-  const hasAssessmentAccess = ((reportRequests as unknown as ReportRequestRow[] | null) ?? []).some((row) =>
+  const hasPaidReportRequest = ((reportRequests as unknown as ReportRequestRow[] | null) ?? []).some((row) =>
     PAID_REPORT_STATUSES.has(row.status),
   )
+  // Dev / manual grant: clients.has_extended_access unlocks all assessments for this client
+  const hasAssessmentAccess = hasPaidReportRequest || Boolean(typedClient?.has_extended_access)
 
   if (!hasAssessmentAccess) {
     return (
@@ -139,7 +141,12 @@ export default async function AssessmentDetailPage({
                     mode="charge_and_manual"
                   />
                   <Link href="/portal/assessments">
-                    <Button variant="outline">{t(locale, "assessmentDetail.backToAssessments")}</Button>
+                    <Button
+                      variant="outline"
+                      className="border-border bg-secondary text-foreground hover:bg-secondary/80"
+                    >
+                      {t(locale, "assessmentDetail.backToAssessments")}
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -173,13 +180,11 @@ export default async function AssessmentDetailPage({
             </p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download className="h-4 w-4" />
-          {t(locale, "assessmentDetail.downloadPdf")}
-        </Button>
       </div>
 
-      <PortalAssessmentFullReport results={reportResults} />
+      <div className="pb-10">
+        <PortalAssessmentFullReport results={reportResults} />
+      </div>
     </div>
   )
 }

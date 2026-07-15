@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowRight, RefreshCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { AnalyzingScreen } from "@/components/assessment/analyzing-screen"
 import { BasicResults } from "@/components/assessment/basic-results"
 import { ExtendedReportUpsell } from "@/components/assessment/extended-report-upsell"
 import { UnlockReportButton } from "@/components/portal/unlock-report-button"
+import { PortalCompanyProfileStep } from "@/components/portal/portal-company-profile-step"
 import { useAssessmentStore } from "@/lib/assessment-store"
 import { useLanguage } from "@/components/language-provider"
 import type { CompanyInfo } from "@/lib/types"
@@ -20,6 +21,8 @@ type PortalAssessmentFlowProps = {
   contactEmail: string
   industry?: string | null
   companySize?: string | null
+  website?: string | null
+  description?: string | null
 }
 
 function parseContactName(name: string | null): Pick<CompanyInfo, "firstName" | "lastName"> {
@@ -33,6 +36,10 @@ function parseContactName(name: string | null): Pick<CompanyInfo, "firstName" | 
   }
 }
 
+function isProfileIncomplete(industry?: string | null, description?: string | null) {
+  return !industry?.trim() || !description?.trim()
+}
+
 export function PortalAssessmentFlow({
   clientId,
   companyName,
@@ -40,13 +47,20 @@ export function PortalAssessmentFlow({
   contactEmail,
   industry,
   companySize,
+  website,
+  description,
 }: PortalAssessmentFlowProps) {
   const { t } = useLanguage()
   const step = useAssessmentStore((state) => state.step)
   const reset = useAssessmentStore((state) => state.reset)
   const setCompanyInfo = useAssessmentStore((state) => state.setCompanyInfo)
+  const companyInfo = useAssessmentStore((state) => state.companyInfo)
   const hasPurchasedExtended = useAssessmentStore((state) => state.hasPurchasedExtended)
   const results = useAssessmentStore((state) => state.results)
+
+  const [needsProfile, setNeedsProfile] = useState(() =>
+    isProfileIncomplete(industry, description),
+  )
 
   useEffect(() => {
     reset()
@@ -58,22 +72,61 @@ export function PortalAssessmentFlow({
       email: contactEmail,
       industry: industry || "",
       employeeCount: companySize || "",
+      website: website || "",
+      description: description || "",
     })
-  }, [companyName, companySize, contactEmail, contactName, industry, reset, setCompanyInfo])
+    setNeedsProfile(isProfileIncomplete(industry, description))
+  }, [
+    companyName,
+    companySize,
+    contactEmail,
+    contactName,
+    description,
+    industry,
+    reset,
+    setCompanyInfo,
+    website,
+  ])
+
+  const seedCompanyInfo = (): CompanyInfo => {
+    const { firstName, lastName } = parseContactName(contactName)
+    return {
+      firstName,
+      lastName,
+      companyName,
+      email: contactEmail,
+      industry: industry || "",
+      employeeCount: companySize || "",
+      website: website || "",
+      description: description || "",
+    }
+  }
+
+  const showProfileGate = needsProfile && (step === "questions" || step === "landing" || step === "info")
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-          {t("assessment.flow.step2Badge")}
+          {showProfileGate ? t("assessment.flow.step1Badge") : t("assessment.flow.step2Badge")}
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">{t("assessments.newAssessment")}</h1>
-        <p className="mt-2 text-muted-foreground">{t("assessments.subtitle")}</p>
+        <p className="mt-2 text-muted-foreground">
+          {showProfileGate ? t("portal.assessment.profile.pageHint") : t("assessments.subtitle")}
+        </p>
       </div>
 
-      {step === "questions" ? (
-        <QuestionCard />
+      {showProfileGate ? (
+        <PortalCompanyProfileStep
+          initial={companyInfo ?? seedCompanyInfo()}
+          onContinue={(info) => {
+            setCompanyInfo(info)
+            setNeedsProfile(false)
+          }}
+        />
       ) : null}
+
+      {!showProfileGate && step === "questions" ? <QuestionCard /> : null}
 
       {step === "analyzing" ? (
         <div className="mx-auto max-w-lg">
@@ -118,15 +171,9 @@ export function PortalAssessmentFlow({
               className="gap-2 text-muted-foreground"
               onClick={() => {
                 reset()
-                const { firstName, lastName } = parseContactName(contactName)
-                setCompanyInfo({
-                  firstName,
-                  lastName,
-                  companyName,
-                  email: contactEmail,
-                  industry: industry || "",
-                  employeeCount: companySize || "",
-                })
+                const info = seedCompanyInfo()
+                setCompanyInfo(info)
+                setNeedsProfile(isProfileIncomplete(info.industry, info.description))
               }}
             >
               <RefreshCcw className="h-4 w-4" />
