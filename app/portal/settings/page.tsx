@@ -9,10 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
-import { Building2, User, Mail, Users, Briefcase, Save, CheckCircle, Globe2 } from "lucide-react"
+import { Building2, User, Mail, Save, CheckCircle, Globe2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
-import { EMPLOYEE_RANGES, INDUSTRIES } from "@/lib/assessment-data"
 import { normalizeCompanyWebsiteInput } from "@/lib/utils"
 
 interface Client {
@@ -20,8 +19,6 @@ interface Client {
   company_name: string
   contact_name: string | null
   contact_email: string
-  industry: string | null
-  company_size: string | null
   website: string | null
   description: string | null
 }
@@ -37,8 +34,6 @@ export default function SettingsPage() {
     company_name: "",
     contact_name: "",
     contact_email: "",
-    industry: "",
-    company_size: "",
     website: "",
     description: "",
   })
@@ -63,8 +58,6 @@ export default function SettingsPage() {
           company_name: row.company_name || "",
           contact_name: row.contact_name || "",
           contact_email: row.contact_email || "",
-          industry: row.industry || "",
-          company_size: row.company_size || "",
           website: row.website || "",
           description: row.description || "",
         })
@@ -90,8 +83,6 @@ export default function SettingsPage() {
         company_name: formData.company_name,
         contact_name: formData.contact_name || null,
         contact_email: formData.contact_email,
-        industry: formData.industry || null,
-        company_size: formData.company_size || null,
         website,
         description: formData.description.trim() || null,
       })
@@ -223,52 +214,6 @@ export default function SettingsPage() {
               onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
               placeholder={t("settings.contact.emailPlaceholder")}
             />
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="industry" className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                {t("settings.industry")}
-              </Label>
-              <Select
-                value={formData.industry || undefined}
-                onValueChange={(value) => setFormData({ ...formData, industry: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("settings.industry.placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {INDUSTRIES.map((industry) => (
-                    <SelectItem key={industry} value={industry}>
-                      {industry}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="company_size" className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                {t("settings.companySize")}
-              </Label>
-              <Select
-                value={formData.company_size || undefined}
-                onValueChange={(value) => setFormData({ ...formData, company_size: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("settings.companySize.placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {EMPLOYEE_RANGES.map((size) => (
-                    <SelectItem key={size} value={size}>
-                      {`${size} ${t("settings.companySize.suffix")}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4">
