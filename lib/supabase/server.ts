@@ -16,6 +16,7 @@ const ALLOWED_COLUMNS: Record<TableName, Set<string>> = {
     "company_size",
     "website",
     "description",
+    "linkedin",
     "has_extended_access",
     "created_at",
     "updated_at",

@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db"
+import { getJobRiskAccessByClientId } from "@/lib/job-risk/access"
 
 type ContextData = {
   companyName: string
@@ -56,13 +57,17 @@ export async function getChatContext(clientId: string): Promise<ContextData> {
     limit 3
   `
 
-  const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null }>>`
-    select id, overall_risk_score, executive_summary
-    from job_risk_reports
-    where client_id = ${clientId}
-    order by generated_at desc
-    limit 1
-  `
+  // Job Risk is a gated product: only surface it in chat once the client has access.
+  const jobRiskAccess = await getJobRiskAccessByClientId(clientId)
+  const reports = jobRiskAccess.hasAccess
+    ? await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null }>>`
+        select id, overall_risk_score, executive_summary
+        from job_risk_reports
+        where client_id = ${clientId}
+        order by generated_at desc
+        limit 1
+      `
+    : []
   const latestReport = reports[0]
 
   let highestRiskRoles: HighestRiskRole[] = []

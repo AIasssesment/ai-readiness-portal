@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
 import { getLlmModel, isGoogleAiConfigured } from "@/lib/ai/model"
+import { getJobRiskAccessByUserId } from "@/lib/job-risk/access"
 
 const RoleSchema = z.object({
   role_name: z.string().min(2),
@@ -125,6 +126,17 @@ export async function POST() {
         { error: "GOOGLE_GENERATIVE_AI_API_KEY is not configured" },
         { status: 500 },
       )
+    }
+
+    const access = await getJobRiskAccessByUserId(user.id)
+    if (!access.hasClient) {
+      return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
+    }
+    if (!access.hasLinkedin) {
+      return NextResponse.json({ error: "LinkedIn URL is required for Job Risk" }, { status: 400 })
+    }
+    if (!access.hasAccess) {
+      return NextResponse.json({ error: "Job Risk report is locked. Complete payment to unlock." }, { status: 402 })
     }
 
     const clients = await sql<Array<{ id: string; company_name: string; industry: string | null; company_size: string | null }>>`

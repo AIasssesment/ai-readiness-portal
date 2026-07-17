@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
-import { Building2, User, Mail, Save, CheckCircle, Globe2 } from "lucide-react"
+import { Building2, User, Mail, Save, CheckCircle, Globe2, Linkedin } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
-import { normalizeCompanyWebsiteInput } from "@/lib/utils"
+import { normalizeCompanyWebsiteInput, normalizeLinkedInInput } from "@/lib/utils"
 
 interface Client {
   id: string
@@ -21,6 +21,7 @@ interface Client {
   contact_email: string
   website: string | null
   description: string | null
+  linkedin: string | null
 }
 
 export default function SettingsPage() {
@@ -36,6 +37,7 @@ export default function SettingsPage() {
     contact_email: "",
     website: "",
     description: "",
+    linkedin: "",
   })
 
   const db = useMemo(() => createClient(), [])
@@ -60,6 +62,7 @@ export default function SettingsPage() {
           contact_email: row.contact_email || "",
           website: row.website || "",
           description: row.description || "",
+          linkedin: row.linkedin || "",
         })
       }
       setLoading(false)
@@ -76,6 +79,8 @@ export default function SettingsPage() {
 
     const websiteRaw = formData.website.trim()
     const website = websiteRaw ? normalizeCompanyWebsiteInput(websiteRaw) : null
+    const linkedinRaw = formData.linkedin.trim()
+    const linkedin = linkedinRaw ? normalizeLinkedInInput(linkedinRaw) : null
 
     const { error } = await db
       .from("clients")
@@ -85,6 +90,7 @@ export default function SettingsPage() {
         contact_email: formData.contact_email,
         website,
         description: formData.description.trim() || null,
+        linkedin,
       })
       .eq("id", client.id)
 
@@ -174,6 +180,20 @@ export default function SettingsPage() {
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
               placeholder={t("settings.website.placeholder")}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="linkedin" className="flex items-center gap-2">
+              <Linkedin className="h-4 w-4 text-muted-foreground" />
+              {t("settings.linkedin")}
+            </Label>
+            <Input
+              id="linkedin"
+              value={formData.linkedin}
+              onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+              placeholder={t("settings.linkedin.placeholder")}
+            />
+            <p className="text-xs text-muted-foreground">{t("settings.linkedin.hint")}</p>
           </div>
 
           <div className="space-y-2">
