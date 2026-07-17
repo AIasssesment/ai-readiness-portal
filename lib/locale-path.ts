@@ -18,3 +18,12 @@ export function localizedAuthPath(locale: Locale, authPath: string): string {
 export function localizedHomePath(locale: Locale): string {
   return `/${locale}`
 }
+
+/**
+ * Swap `/en` or `/uk` prefix when present.
+ * Returns null for cookie-only routes (`/portal`, `/payment`, …) where the URL stays unchanged.
+ */
+export function swapPublicLocalePath(pathname: string, nextLocale: Locale): string | null {
+  if (!/^\/(en|uk)(?=\/|$)/.test(pathname)) return null
+  return pathname.replace(/^\/(en|uk)/, `/${nextLocale}`)
+}

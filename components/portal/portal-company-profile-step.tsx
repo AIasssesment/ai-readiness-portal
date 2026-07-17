@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { ArrowRight } from "lucide-react"
-import { EMPLOYEE_RANGES, INDUSTRIES } from "@/lib/assessment-data"
 import { normalizeCompanyWebsiteInput } from "@/lib/utils"
 import { useLanguage } from "@/components/language-provider"
 import type { CompanyInfo } from "@/lib/types"
@@ -26,8 +24,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
   const [form, setForm] = useState({
     companyName: initial.companyName || "",
     website: initial.website || "",
-    industry: initial.industry || "",
-    employeeCount: initial.employeeCount || "",
     description: initial.description || "",
   })
   const [error, setError] = useState<string | null>(null)
@@ -37,12 +33,10 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
     const website = form.website.trim()
       ? normalizeCompanyWebsiteInput(form.website.trim())
       : ""
-    const industry = form.industry.trim()
-    const employeeCount = form.employeeCount.trim()
     const description = form.description.trim()
     const companyName = form.companyName.trim() || initial.companyName
 
-    if (!industry || !description || !employeeCount) {
+    if (!description) {
       setError(t("portal.assessment.profile.errorRequired"))
       return
     }
@@ -54,8 +48,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
       ...initial,
       companyName,
       website,
-      industry,
-      employeeCount,
       description,
     }
 
@@ -65,8 +57,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
         .from("clients")
         .update({
           company_name: companyName,
-          industry,
-          company_size: employeeCount,
           website: website || null,
           description,
         })
@@ -111,45 +101,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
             onChange={(e) => setForm({ ...form, website: e.target.value })}
             placeholder={t("settings.website.placeholder")}
           />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>{t("settings.industry")} *</Label>
-            <Select
-              value={form.industry || undefined}
-              onValueChange={(value) => setForm({ ...form, industry: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("settings.industry.placeholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {INDUSTRIES.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>{t("settings.companySize")} *</Label>
-            <Select
-              value={form.employeeCount || undefined}
-              onValueChange={(value) => setForm({ ...form, employeeCount: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("settings.companySize.placeholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {EMPLOYEE_RANGES.map((size) => (
-                  <SelectItem key={size} value={size}>
-                    {size} {t("settings.companySize.suffix")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <div className="space-y-2">

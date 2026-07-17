@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/language-provider"
+import { LocaleToggle } from "@/components/locale-toggle"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -407,7 +408,13 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, recen
         </div>
       </div>
 
-      <div className="border-t p-3">
+      <div className="space-y-2 border-t p-3">
+        <div className="space-y-1">
+          <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {t("portal.language")}
+          </p>
+          <LocaleToggle onSwitched={onNavigate} />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-start gap-2">

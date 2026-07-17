@@ -19,8 +19,6 @@ type PortalAssessmentFlowProps = {
   companyName: string
   contactName: string | null
   contactEmail: string
-  industry?: string | null
-  companySize?: string | null
   website?: string | null
   description?: string | null
 }
@@ -36,8 +34,8 @@ function parseContactName(name: string | null): Pick<CompanyInfo, "firstName" | 
   }
 }
 
-function isProfileIncomplete(industry?: string | null, description?: string | null) {
-  return !industry?.trim() || !description?.trim()
+function isProfileIncomplete(description?: string | null) {
+  return !description?.trim()
 }
 
 export function PortalAssessmentFlow({
@@ -45,8 +43,6 @@ export function PortalAssessmentFlow({
   companyName,
   contactName,
   contactEmail,
-  industry,
-  companySize,
   website,
   description,
 }: PortalAssessmentFlowProps) {
@@ -58,9 +54,7 @@ export function PortalAssessmentFlow({
   const hasPurchasedExtended = useAssessmentStore((state) => state.hasPurchasedExtended)
   const results = useAssessmentStore((state) => state.results)
 
-  const [needsProfile, setNeedsProfile] = useState(() =>
-    isProfileIncomplete(industry, description),
-  )
+  const [needsProfile, setNeedsProfile] = useState(() => isProfileIncomplete(description))
 
   useEffect(() => {
     reset()
@@ -70,19 +64,15 @@ export function PortalAssessmentFlow({
       lastName,
       companyName,
       email: contactEmail,
-      industry: industry || "",
-      employeeCount: companySize || "",
       website: website || "",
       description: description || "",
     })
-    setNeedsProfile(isProfileIncomplete(industry, description))
+    setNeedsProfile(isProfileIncomplete(description))
   }, [
     companyName,
-    companySize,
     contactEmail,
     contactName,
     description,
-    industry,
     reset,
     setCompanyInfo,
     website,
@@ -95,8 +85,6 @@ export function PortalAssessmentFlow({
       lastName,
       companyName,
       email: contactEmail,
-      industry: industry || "",
-      employeeCount: companySize || "",
       website: website || "",
       description: description || "",
     }
@@ -173,7 +161,7 @@ export function PortalAssessmentFlow({
                 reset()
                 const info = seedCompanyInfo()
                 setCompanyInfo(info)
-                setNeedsProfile(isProfileIncomplete(info.industry, info.description))
+                setNeedsProfile(isProfileIncomplete(info.description))
               }}
             >
               <RefreshCcw className="h-4 w-4" />

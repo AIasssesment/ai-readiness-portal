@@ -11,7 +11,11 @@ import { useLanguage } from "@/components/language-provider"
 
 const TIMELINES = ["1-2 weeks", "1 month", "2-3 months", "3-6 months", "6+ months"] as const
 
-export function OpportunityAddForm() {
+export function OpportunityAddForm({
+  endpoint = "/api/opportunities",
+}: {
+  endpoint?: string
+}) {
   const router = useRouter()
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
@@ -48,7 +52,7 @@ export function OpportunityAddForm() {
 
     setLoading(true)
     setError(null)
-    const response = await fetch("/api/opportunities", {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

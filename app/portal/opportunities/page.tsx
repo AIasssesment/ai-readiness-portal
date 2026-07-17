@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { OpportunitiesStatsChart } from "@/components/portal/opportunities-stats-chart"
-import { OpportunitiesGenerateButton } from "@/components/portal/opportunities-generate-button"
-import { OpportunityAddForm } from "@/components/portal/opportunity-add-form"
 import {
   formatAssumptionsCaption,
   formatCompactUsd,
@@ -115,6 +113,7 @@ export default async function OpportunitiesPage() {
     .from("opportunities")
     .select()
     .eq("client_id", typedClient?.id)
+    .eq("publication_status", "published")
     .order("priority", { ascending: true })
     .order("estimated_annual_savings", { ascending: false })
   const opportunities = (rawOpportunities ?? []) as OpportunityRow[]
@@ -153,12 +152,7 @@ export default async function OpportunitiesPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <OpportunitiesGenerateButton />
-        <OpportunityAddForm />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -305,7 +299,7 @@ export default async function OpportunitiesPage() {
                       )}
                     </div>
 
-                    <div className="grid gap-4 border-t border-slate-700/70 pt-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 border-t border-slate-700/70 pt-4 sm:grid-cols-2">
                       <div className="space-y-1">
                         <div className="text-5xl font-bold tracking-tight text-emerald-400">
                           {formatCompactUsd(annual)}
