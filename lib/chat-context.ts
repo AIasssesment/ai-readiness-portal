@@ -51,6 +51,7 @@ export async function getChatContext(clientId: string): Promise<ContextData> {
     select title, estimated_annual_savings, estimated_hours_saved_weekly
     from opportunities
     where client_id = ${clientId}
+      and publication_status = 'published'
     order by estimated_annual_savings desc
     limit 3
   `

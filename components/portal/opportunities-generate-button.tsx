@@ -7,7 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Lightbulb, Sparkles } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 
-export function OpportunitiesGenerateButton() {
+export function OpportunitiesGenerateButton({
+  endpoint = "/api/opportunities/generate",
+}: {
+  endpoint?: string
+}) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -16,7 +20,7 @@ export function OpportunitiesGenerateButton() {
   const handleGenerate = async () => {
     setIsLoading(true)
     setError(null)
-    const response = await fetch("/api/opportunities/generate", { method: "POST" })
+    const response = await fetch(endpoint, { method: "POST" })
     setIsLoading(false)
 
     if (!response.ok) {

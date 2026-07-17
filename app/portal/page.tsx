@@ -97,6 +97,7 @@ export default async function PortalDashboard() {
     .from("opportunities")
     .select()
     .eq("client_id", (client as any)?.id)
+    .eq("publication_status", "published")
     .order("priority", { ascending: true })
 
   // Get latest assessment
