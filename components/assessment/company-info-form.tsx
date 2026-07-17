@@ -7,10 +7,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn, normalizeCompanyWebsiteInput } from '@/lib/utils'
 import { parseApiErrorMessage } from '@/lib/http/parse-api-error-message'
-import { EMPLOYEE_RANGES, INDUSTRIES } from '@/lib/assessment-data'
 import { useAssessmentStore } from '@/lib/assessment-store'
 import type { CompanyInfo } from '@/lib/types'
 import { useLanguage } from '@/components/language-provider'
@@ -36,8 +34,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     lastName: '',
     companyName: '',
     website: '',
-    industry: '',
-    employeeCount: '',
     description: '',
     email: '',
   })
@@ -48,18 +44,14 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     e.preventDefault()
 
     const companyWebsite = normalizeCompanyWebsiteInput(formData.website || formData.companyName)
-    const industry = formData.industry?.trim() || ''
     const description = formData.description?.trim() || ''
-    const employeeCount = formData.employeeCount?.trim() || ''
 
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
       !formData.email.trim() ||
       !companyWebsite ||
-      !industry ||
-      !description ||
-      !employeeCount
+      !description
     ) {
       setError(t('companyForm.errorRequired'))
       return
@@ -97,8 +89,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           lastName: formData.lastName.trim(),
           companyName: displayName,
           website: companyWebsite,
-          industry,
-          companySize: employeeCount,
           description,
           locale,
         }),
@@ -125,8 +115,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         ...formData,
         companyName: displayName,
         website: companyWebsite,
-        industry,
-        employeeCount,
         description,
       })
     } catch {
@@ -221,49 +209,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             onChange={(e) => setFormData({ ...formData, website: e.target.value })}
             className="h-12 border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="industry" className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              {t('companyForm.industry')}
-            </label>
-            <Select
-              value={formData.industry || undefined}
-              onValueChange={(value) => setFormData({ ...formData, industry: value })}
-            >
-              <SelectTrigger id="industry" className="h-12 border-border bg-secondary">
-                <SelectValue placeholder={t('companyForm.phIndustry')} />
-              </SelectTrigger>
-              <SelectContent>
-                {INDUSTRIES.map((industry) => (
-                  <SelectItem key={industry} value={industry}>
-                    {industry}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label htmlFor="companySize" className="mb-1.5 block text-sm font-medium text-muted-foreground">
-              {t('companyForm.companySize')}
-            </label>
-            <Select
-              value={formData.employeeCount || undefined}
-              onValueChange={(value) => setFormData({ ...formData, employeeCount: value })}
-            >
-              <SelectTrigger id="companySize" className="h-12 border-border bg-secondary">
-                <SelectValue placeholder={t('companyForm.phCompanySize')} />
-              </SelectTrigger>
-              <SelectContent>
-                {EMPLOYEE_RANGES.map((size) => (
-                  <SelectItem key={size} value={size}>
-                    {size} {t('companyForm.employeesSuffix')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <div>

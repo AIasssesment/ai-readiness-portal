@@ -13,7 +13,7 @@ export const CompanyIntelligenceSchema = z.object({
   headquarters: nullableString,
   countries: z.array(z.string()).max(30),
   core_products_services: z.array(z.string()).max(20),
-  departments: z.array(z.string()).min(1).max(25),
+  departments: z.array(z.string()).max(25),
   tech_stack: z.array(z.string()).max(30),
   hiring_signals: z.array(z.string()).max(20),
   recent_news: z.array(z.string()).max(15),

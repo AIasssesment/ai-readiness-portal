@@ -6,8 +6,6 @@ type ClientRow = {
   company_name: string
   contact_name: string | null
   contact_email: string
-  industry: string | null
-  company_size: string | null
   website: string | null
   description: string | null
 }
@@ -62,8 +60,6 @@ export async function POST(request: Request) {
               ? `${companyInfo.firstName} ${companyInfo.lastName}`
               : null,
             contact_email: companyInfo?.email || user.email,
-            industry: companyInfo?.industry || null,
-            company_size: companyInfo?.employeeCount || null,
             website,
             description,
           })
@@ -77,7 +73,7 @@ export async function POST(request: Request) {
         client = newClient as ClientRow
       }
 
-      // Update client profile from assessment (source of truth for industry / size / public profile)
+      // Update the client profile from the latest assessment.
       await db
         .from("clients")
         .update({
@@ -85,8 +81,6 @@ export async function POST(request: Request) {
           contact_name: companyInfo?.firstName
             ? `${companyInfo.firstName} ${companyInfo.lastName}`
             : client.contact_name,
-          industry: companyInfo?.industry || client.industry,
-          company_size: companyInfo?.employeeCount || client.company_size,
           website: website || client.website || null,
           description: description || client.description || null,
         })

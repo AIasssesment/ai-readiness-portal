@@ -29,10 +29,11 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Protect /protected and /portal routes
+  // Protect /protected, /portal and /admin routes (admin role is enforced in the layout)
   if (
     (request.nextUrl.pathname.startsWith('/protected') ||
-     request.nextUrl.pathname.startsWith('/portal')) &&
+     request.nextUrl.pathname.startsWith('/portal') ||
+     request.nextUrl.pathname.startsWith('/admin')) &&
     !user
   ) {
     const url = request.nextUrl.clone()

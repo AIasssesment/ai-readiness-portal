@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { JobRiskGenerateButton } from "@/components/portal/job-risk-generate-button"
+import { JobRiskLinkedinGate } from "@/components/portal/job-risk-linkedin-gate"
+import { JobRiskUnlockGate } from "@/components/portal/job-risk-unlock-gate"
+import { getJobRiskAccessByUserId } from "@/lib/job-risk/access"
 import { ShieldCheck, Building2, Clock, ArrowRight } from "lucide-react"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
@@ -68,14 +71,8 @@ export default async function JobRiskPage({
   const params = await searchParams
   const selectedDepartment = params?.department || "all"
 
-  const clients = await sql<Array<{ id: string }>>`
-    select id
-    from clients
-    where user_id = ${user.id}
-    limit 1
-  `
-  const client = clients[0]
-  if (!client) {
+  const access = await getJobRiskAccessByUserId(user.id)
+  if (!access.hasClient || !access.clientId) {
     return (
       <Card>
         <CardHeader>
@@ -86,10 +83,38 @@ export default async function JobRiskPage({
     )
   }
 
+  // Gate 1 — LinkedIn is required before Job Risk becomes available.
+  if (!access.hasLinkedin) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t(locale, "jobRisk.reportTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t(locale, "jobRisk.locked.subtitle")}</p>
+        </div>
+        <JobRiskLinkedinGate initialValue={access.linkedin ?? ""} />
+      </div>
+    )
+  }
+
+  // Gate 2 — a paid unlock (or manual extended access) is required.
+  if (!access.hasAccess) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t(locale, "jobRisk.reportTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t(locale, "jobRisk.locked.subtitle")}</p>
+        </div>
+        <JobRiskUnlockGate />
+      </div>
+    )
+  }
+
+  const clientId = access.clientId
+
   const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null; generated_at: string }>>`
     select id, overall_risk_score, executive_summary, generated_at
     from job_risk_reports
-    where client_id = ${client.id}
+    where client_id = ${clientId}
     order by generated_at desc
     limit 1
   `
