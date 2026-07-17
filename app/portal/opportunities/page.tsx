@@ -299,7 +299,7 @@ export default async function OpportunitiesPage() {
                       )}
                     </div>
 
-                    <div className="grid gap-4 border-t border-slate-700/70 pt-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 border-t border-slate-700/70 pt-4 sm:grid-cols-2">
                       <div className="space-y-1">
                         <div className="text-5xl font-bold tracking-tight text-emerald-400">
                           {formatCompactUsd(annual)}

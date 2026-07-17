@@ -142,16 +142,16 @@ export default async function PortalDashboard() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight break-words sm:text-3xl">
             {t(locale, "dashboard.welcomeBack" )} {typedClient?.contact_name || typedClient?.company_name}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground sm:text-base">
             {t(locale, "dashboard.overviewSubtitle")}
           </p>
         </div>
-        <Link href="/portal/assessments/new">
-          <Button className="gap-2">
+        <Link href="/portal/assessments/new" className="shrink-0">
+          <Button className="w-full gap-2 sm:w-auto">
             <Zap className="h-4 w-4" />
             {t(locale, "dashboard.newAssessment")}
           </Button>
@@ -159,7 +159,7 @@ export default async function PortalDashboard() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -228,7 +228,7 @@ export default async function PortalDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Latest Assessment Card */}
         <Card>
           <CardHeader>
@@ -359,7 +359,7 @@ export default async function PortalDashboard() {
           <CardDescription>{t(locale, "dashboard.quickActionsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link href="/portal/assessments/new" className="block">
               <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">

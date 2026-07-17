@@ -1,8 +1,11 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
+import { Brain } from "lucide-react"
 import { createClient } from "@/lib/db-client/server"
 import { PortalNav } from "@/components/portal/portal-nav"
 import { MobilePortalNav } from "@/components/portal/mobile-portal-nav"
 import { LanguageProvider } from "@/components/language-provider"
+import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
 import { sql } from "@/lib/db"
 
@@ -99,18 +102,24 @@ export default async function PortalLayout({
 
   return (
     <LanguageProvider initialLocale={locale}>
-    <div className="min-h-screen bg-muted/30 md:flex md:h-screen md:overflow-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-muted/30 md:flex md:h-screen md:overflow-hidden">
       <div className="hidden h-screen w-[280px] shrink-0 md:block">
         <PortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} recentAssessments={recentAssessmentsForNav} />
       </div>
 
-      <div className="min-w-0 flex-1 md:h-screen md:overflow-y-auto">
-        <div className="border-b bg-background px-4 py-3 md:hidden">
-          <div className="flex items-center justify-end">
+      <div className="min-w-0 max-w-full flex-1 overflow-x-hidden md:h-screen md:overflow-y-auto">
+        <div className="sticky top-0 z-30 border-b bg-background/80 px-4 py-3 backdrop-blur-md md:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/portal" className="flex min-w-0 items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Brain className="h-4 w-4 text-primary" />
+              </div>
+              <span className="truncate text-sm font-semibold">{t(locale, "portal.title")}</span>
+            </Link>
             <MobilePortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} recentAssessments={recentAssessmentsForNav} />
           </div>
         </div>
-        <main className="px-4 py-8 md:px-8">
+        <main className="w-full min-w-0 max-w-full px-4 py-6 sm:py-8 md:px-8">
           {children}
         </main>
       </div>
