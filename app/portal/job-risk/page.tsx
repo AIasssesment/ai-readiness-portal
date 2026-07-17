@@ -182,7 +182,7 @@ export default async function JobRiskPage({
           <CardDescription>
             {latestReport.executive_summary || t(locale, "jobRisk.noSummary")}
           </CardDescription>
-          <div className="grid gap-2 pt-1 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
             <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">{t(locale, "jobRisk.totalEmployees")}</p>
               <p className="text-lg font-semibold">{totalEmployees.toLocaleString()}</p>
@@ -269,7 +269,7 @@ export default async function JobRiskPage({
                   <p className="text-sm text-foreground/90">{role.reasoning || t(locale, "jobRisk.noReasoning")}</p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2 rounded-lg border border-red-500/15 bg-red-500/5 p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-red-300">{t(locale, "jobRisk.tasksAtRisk")}</p>
                     <ul className="space-y-1.5 text-sm">

@@ -111,7 +111,7 @@ export default async function AssessmentsPage() {
       </div>
 
       {typedAssessments.length > 0 ? (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {typedAssessments.map((assessment) => (
             <Card key={assessment.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">

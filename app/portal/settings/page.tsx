@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { Building2, User, Mail, Save, CheckCircle, Globe2, Linkedin } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
+import { LocaleToggle } from "@/components/locale-toggle"
 import { normalizeCompanyWebsiteInput, normalizeLinkedInInput } from "@/lib/utils"
 
 interface Client {
@@ -29,8 +28,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const router = useRouter()
-  const { locale, setLocale, t } = useLanguage()
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     company_name: "",
     contact_name: "",
@@ -102,11 +100,6 @@ export default function SettingsPage() {
     }
   }
 
-  const handleLanguageChange = (nextLocale: "en" | "uk") => {
-    setLocale(nextLocale)
-    router.refresh()
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -132,16 +125,8 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Label htmlFor="site-language">{t("settings.language.siteLanguage")}</Label>
-          <Select value={locale} onValueChange={(value) => handleLanguageChange(value as "en" | "uk")}>
-            <SelectTrigger id="site-language" className="max-w-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">{t("settings.language.option.en")}</SelectItem>
-              <SelectItem value="uk">{t("settings.language.option.uk")}</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label>{t("settings.language.siteLanguage")}</Label>
+          <LocaleToggle className="max-w-xs" />
         </CardContent>
       </Card>
 
