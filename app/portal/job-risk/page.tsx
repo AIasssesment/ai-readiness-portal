@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { JobRiskGenerateButton } from "@/components/portal/job-risk-generate-button"
 import { JobRiskLinkedinGate } from "@/components/portal/job-risk-linkedin-gate"
 import { JobRiskUnlockGate } from "@/components/portal/job-risk-unlock-gate"
+import { JobRiskEnrichmentPanel } from "@/components/portal/job-risk-enrichment-panel"
 import { getJobRiskAccessByUserId } from "@/lib/job-risk/access"
 import { ShieldCheck, Building2, Clock, ArrowRight } from "lucide-react"
 import { t } from "@/lib/i18n"
@@ -122,18 +123,21 @@ export default async function JobRiskPage({
 
   if (!latestReport) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t(locale, "jobRisk.reportTitle")}</CardTitle>
-          <CardDescription>
-            {t(locale, "jobRisk.reportHint")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-sm text-muted-foreground">{t(locale, "jobRisk.generatePreamble")}</p>
-          <JobRiskGenerateButton />
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <JobRiskEnrichmentPanel clientId={clientId} locale={locale} />
+        <Card>
+          <CardHeader>
+            <CardTitle>{t(locale, "jobRisk.reportTitle")}</CardTitle>
+            <CardDescription>
+              {t(locale, "jobRisk.reportHint")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-sm text-muted-foreground">{t(locale, "jobRisk.generatePreamble")}</p>
+            <JobRiskGenerateButton />
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
@@ -170,6 +174,7 @@ export default async function JobRiskPage({
 
   return (
     <div className="space-y-6">
+      <JobRiskEnrichmentPanel clientId={clientId} locale={locale} />
       <Card className="border-border/40 bg-card/80 shadow-sm">
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">

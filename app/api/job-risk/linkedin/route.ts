@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { after, NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
+import { runCompanyEnrichment } from "@/lib/company-enrichment/service"
 import { sql } from "@/lib/db"
 import { isLikelyLinkedInUrl, normalizeLinkedInInput } from "@/lib/utils"
 
@@ -27,6 +28,14 @@ export async function POST(request: Request) {
   if (!updated[0]) {
     return NextResponse.json({ error: "Client profile not found" }, { status: 404 })
   }
+
+  const clientId = updated[0].id
+  // `after()` keeps the work alive after the response (serverless + next start).
+  after(() => {
+    void runCompanyEnrichment(clientId).catch((error) => {
+      console.error("background company enrichment failed", error)
+    })
+  })
 
   return NextResponse.json({ ok: true, linkedin })
 }

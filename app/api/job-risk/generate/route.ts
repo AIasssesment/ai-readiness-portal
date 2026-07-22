@@ -4,6 +4,11 @@ import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth/session"
 import { sql } from "@/lib/db"
 import { getLlmModel, isGoogleAiConfigured } from "@/lib/ai/model"
+import {
+  ensureEnrichment,
+  impliedRolesToWorkforce,
+} from "@/lib/company-enrichment/service"
+import type { NormalizedEnrichment } from "@/lib/company-enrichment/schema"
 import { getJobRiskAccessByUserId } from "@/lib/job-risk/access"
 
 const RoleSchema = z.object({
@@ -63,7 +68,8 @@ const STATIC_ROLE_TEMPLATES: BenchmarkTemplate[] = [
 async function resolveWorkforceRoles(
   clientId: string,
   client: { company_size: string | null },
-): Promise<WorkforceRole[]> {
+  enrichment: NormalizedEnrichment | null,
+): Promise<{ roles: WorkforceRole[]; source: "manual" | "enrichment" | "synthetic" }> {
   const existing = await sql<WorkforceRole[]>`
     select role_title, normalized_role, department, employee_count
     from workforce_roles
@@ -71,7 +77,14 @@ async function resolveWorkforceRoles(
     order by employee_count desc
     limit 50
   `
-  if (existing.length > 0) return existing
+  if (existing.length > 0) return { roles: existing, source: "manual" }
+
+  if (enrichment?.implied_roles?.length) {
+    const fromEnrichment = impliedRolesToWorkforce(enrichment, client.company_size)
+    if (fromEnrichment.length > 0) {
+      return { roles: fromEnrichment, source: "enrichment" }
+    }
+  }
 
   let templateRows: BenchmarkTemplate[] = []
   try {
@@ -89,7 +102,7 @@ async function resolveWorkforceRoles(
   const target = Math.max(n, inferHeadcountFromCompanySize(client.company_size))
   const base = Math.max(1, Math.floor(target / n))
   let used = 0
-  return templates.map((row, i) => {
+  const roles = templates.map((row, i) => {
     const isLast = i === n - 1
     const employee_count = isLast ? Math.max(1, target - used) : base
     used += employee_count
@@ -100,6 +113,7 @@ async function resolveWorkforceRoles(
       employee_count,
     }
   })
+  return { roles, source: "synthetic" }
 }
 
 function fallbackRiskByDepartment(department: string | null) {
@@ -139,8 +153,8 @@ export async function POST() {
       return NextResponse.json({ error: "Job Risk report is locked. Complete payment to unlock." }, { status: 402 })
     }
 
-    const clients = await sql<Array<{ id: string; company_name: string; industry: string | null; company_size: string | null }>>`
-      select id, company_name, industry, company_size
+    const clients = await sql<Array<{ id: string; company_name: string; industry: string | null; company_size: string | null; linkedin: string | null }>>`
+      select id, company_name, industry, company_size, linkedin
       from clients
       where user_id = ${user.id}
       limit 1
@@ -162,14 +176,21 @@ export async function POST() {
       return NextResponse.json({ error: "Assessment required before generating job risk" }, { status: 400 })
     }
 
-    const workforceRoles = await resolveWorkforceRoles(client.id, {
-      company_size: client.company_size,
-    })
+    let enrichment: NormalizedEnrichment | null = null
+    try {
+      const ensured = await ensureEnrichment(client.id)
+      enrichment = ensured.normalized
+    } catch (error) {
+      console.warn("ensureEnrichment failed; continuing without LinkedIn grounding", error)
+    }
 
-    const customWorkforceRows = await sql<Array<{ c: number }>>`
-      select count(*)::int as c from workforce_roles where client_id = ${client.id}
-    `
-    const isInferredWorkforce = (customWorkforceRows[0]?.c ?? 0) === 0
+    const { roles: workforceRoles, source: workforceSource } = await resolveWorkforceRoles(
+      client.id,
+      { company_size: client.company_size },
+      enrichment,
+    )
+
+    const isInferredWorkforce = workforceSource !== "manual"
 
     const benchmarks = await sql<BenchmarkRow[]>`
       select normalized_role, risk_score_0_1, source
@@ -212,12 +233,36 @@ Rules:
 - Timeline must be realistic and aligned with the provided risk score.
 - Cover every provided role exactly once.`
 
+    const workforceNote =
+      workforceSource === "manual"
+        ? ""
+        : workforceSource === "enrichment"
+          ? "\nNote: No custom workforce_roles were saved — role mix inferred from LinkedIn company enrichment (open jobs / about signals) and company size for headcount estimates.\n"
+          : "\nNote: No custom workforce_roles were saved — using a representative role mix from public automation-risk benchmarks and company size for headcount estimates.\n"
+
+    const enrichmentBlock = enrichment
+      ? `
+LinkedIn / company enrichment (grounding; may be partial):
+${JSON.stringify(
+  {
+    linkedin: client.linkedin,
+    company: enrichment.company,
+    open_job_count: enrichment.company.open_job_count,
+    detected_jobs: enrichment.detected_jobs,
+    implied_roles: enrichment.implied_roles,
+  },
+  null,
+  2,
+)}
+`
+      : `\nLinkedIn URL on file: ${client.linkedin || "N/A"} (no enrichment snapshot available)\n`
+
     const userPrompt = `Company: ${client.company_name}
-Industry: ${client.industry || "N/A"}
-Company size: ${client.company_size || "N/A"} employees
+Industry: ${client.industry || enrichment?.company.industry || "N/A"}
+Company size: ${client.company_size || enrichment?.company.company_size || "N/A"} employees
 Latest AI Maturity Score: ${latestAssessment.overall_score}/100 (${latestAssessment.readiness_level})
 Dimension scores: ${JSON.stringify(latestAssessment.dimension_scores || {})}
-${isInferredWorkforce ? "\nNote: No custom workforce_roles were saved — using a representative role mix from public automation-risk benchmarks and company size for headcount estimates.\n" : ""}
+${workforceNote}${enrichmentBlock}
 Workforce data (ground truth input):
 ${JSON.stringify(workforceWithRisk, null, 2)}
 
@@ -270,6 +315,8 @@ Mention the estimated at-risk headcount (${totalAtRiskHeadcount}) in the executi
         totalHeadcount,
         totalAtRiskHeadcount,
         overallRiskScore,
+        workforceSource,
+        enrichmentStatus: enrichment ? "ready" : "unavailable",
       },
     })
   } catch (error) {

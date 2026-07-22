@@ -100,7 +100,15 @@ async function saveAssessmentToDatabase(results: AssessmentResults, extendedRepo
       })
     })
 
-    const data = await response.json()
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const data = isJson ? await response.json().catch(() => null) : null
+
+    if (!response.ok) {
+      console.error('Failed to save assessment:', response.status, data)
+      return null
+    }
+
     return data
   } catch (error) {
     console.error('Failed to save assessment:', error)

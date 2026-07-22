@@ -1,4 +1,9 @@
 import { apiFetch } from "@/lib/api/client"
+import {
+  normalizeCreateMonobankInvoiceResponse,
+  normalizeReportReadinessResponse,
+  normalizeReportRequestResponse,
+} from "@/lib/api/normalize-backend-response"
 import type {
   CreateMonobankInvoiceRequest,
   CreateMonobankInvoiceResponse,
@@ -7,22 +12,25 @@ import type {
 } from "@/lib/api/types"
 
 export async function getReportReadiness(assessmentId: string) {
-  return apiFetch<ReportReadinessResponse>(`/reports/readiness/${assessmentId}`, {
+  const payload = await apiFetch<unknown>(`/reports/readiness/${assessmentId}`, {
     method: "GET",
   })
+  return normalizeReportReadinessResponse(payload)
 }
 
 export async function createMonobankInvoice(body: CreateMonobankInvoiceRequest) {
-  return apiFetch<CreateMonobankInvoiceResponse>("/payments/monobank/invoices", {
+  const payload = await apiFetch<unknown>("/payments/monobank/invoices", {
     method: "POST",
     body: JSON.stringify(body),
   })
+  return normalizeCreateMonobankInvoiceResponse(payload)
 }
 
 export async function getReportRequest(reportRequestId: string) {
-  return apiFetch<ReportRequestResponse>(`/reports/requests/${reportRequestId}`, {
+  const payload = await apiFetch<unknown>(`/reports/requests/${reportRequestId}`, {
     method: "GET",
   })
+  return normalizeReportRequestResponse(payload)
 }
 
 export function storeLatestReportRequestId(reportRequestId: string | undefined) {

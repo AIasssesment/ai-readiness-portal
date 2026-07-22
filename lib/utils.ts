@@ -28,3 +28,13 @@ export function normalizeLinkedInInput(raw: string): string {
 export function isLikelyLinkedInUrl(value: string): boolean {
   return /^https?:\/\/([a-z0-9-]+\.)?linkedin\.com\/.+/i.test(value.trim())
 }
+
+/** True when URL is a LinkedIn company page (`/company/...`). */
+export function isLinkedInCompanyUrl(value: string): boolean {
+  try {
+    const path = new URL(value.trim()).pathname.toLowerCase()
+    return /\/company\/[^/]+/.test(path)
+  } catch {
+    return /linkedin\.com\/company\/[^/?#]+/i.test(value)
+  }
+}
