@@ -7,6 +7,7 @@ import { MobilePortalNav } from "@/components/portal/mobile-portal-nav"
 import { LanguageProvider } from "@/components/language-provider"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
+import { getSessionUserRole } from "@/lib/auth/admin"
 import { sql } from "@/lib/db"
 
 type Client = {
@@ -57,6 +58,8 @@ export default async function PortalLayout({
   const fullNameFromAccount = appUserRows[0]?.full_name?.trim() || null
   const contactFromClient = typedClient?.contact_name?.trim() || null
   const profileDisplayName = contactFromClient || fullNameFromAccount || null
+  const userRole = await getSessionUserRole()
+  const isAdmin = userRole === "admin"
 
   const recentChats =
     typedClient
@@ -104,7 +107,14 @@ export default async function PortalLayout({
     <LanguageProvider initialLocale={locale}>
     <div className="min-h-screen overflow-x-hidden bg-muted/30 md:flex md:h-screen md:overflow-hidden">
       <div className="hidden h-screen w-[280px] shrink-0 md:block">
-        <PortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} recentAssessments={recentAssessmentsForNav} />
+        <PortalNav
+          user={user}
+          client={typedClient}
+          profileDisplayName={profileDisplayName}
+          recentChats={recentChatsForNav}
+          recentAssessments={recentAssessmentsForNav}
+          isAdmin={isAdmin}
+        />
       </div>
 
       <div className="min-w-0 max-w-full flex-1 overflow-x-hidden md:h-screen md:overflow-y-auto">
@@ -116,7 +126,14 @@ export default async function PortalLayout({
               </div>
               <span className="truncate text-sm font-semibold">{t(locale, "portal.title")}</span>
             </Link>
-            <MobilePortalNav user={user} client={typedClient} profileDisplayName={profileDisplayName} recentChats={recentChatsForNav} recentAssessments={recentAssessmentsForNav} />
+            <MobilePortalNav
+              user={user}
+              client={typedClient}
+              profileDisplayName={profileDisplayName}
+              recentChats={recentChatsForNav}
+              recentAssessments={recentAssessmentsForNav}
+              isAdmin={isAdmin}
+            />
           </div>
         </div>
         <main className="w-full min-w-0 max-w-full px-4 py-6 sm:py-8 md:px-8">

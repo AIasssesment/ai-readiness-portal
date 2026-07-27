@@ -46,12 +46,14 @@ export function MobilePortalNav({
   profileDisplayName,
   recentChats,
   recentAssessments,
+  isAdmin = false,
 }: {
   user: AuthUser
   client: Client | null
   profileDisplayName?: string | null
   recentChats: RecentChat[]
   recentAssessments: RecentAssessment[]
+  isAdmin?: boolean
 }) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
@@ -83,6 +85,7 @@ export function MobilePortalNav({
             profileDisplayName={profileDisplayName}
             recentChats={recentChats}
             recentAssessments={recentAssessments}
+            isAdmin={isAdmin}
             onNavigate={() => setOpen(false)}
           />
         </div>

@@ -40,7 +40,8 @@ import {
   User,
   Users,
   ChevronRight,
-  Brain
+  Brain,
+  ShieldCheck,
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
@@ -74,10 +75,19 @@ interface PortalNavProps {
     label: string
     href: string
   }>
+  isAdmin?: boolean
   onNavigate?: () => void
 }
 
-export function PortalNav({ user, client, profileDisplayName, recentChats, recentAssessments = [], onNavigate }: PortalNavProps) {
+export function PortalNav({
+  user,
+  client,
+  profileDisplayName,
+  recentChats,
+  recentAssessments = [],
+  isAdmin = false,
+  onNavigate,
+}: PortalNavProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -114,6 +124,10 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, recen
     { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
     { href: "/portal/workforce", label: t("portal.nav.workforce"), icon: Users },
   ]
+
+  const adminNav = isAdmin
+    ? [{ href: "/admin", label: t("portal.nav.admin"), icon: ShieldCheck }]
+    : []
 
   const isNavActive = (href: string) =>
     pathname === href || (href !== "/portal" && pathname.startsWith(href))
@@ -262,7 +276,7 @@ export function PortalNav({ user, client, profileDisplayName, recentChats, recen
               <Plus className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
               {t("portal.nav.newChat")}
             </button>
-            {[...mainNav, ...careerNav].map(renderNavItem)}
+            {[...mainNav, ...careerNav, ...adminNav].map(renderNavItem)}
           </nav>
 
           <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">

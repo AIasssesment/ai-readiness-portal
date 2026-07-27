@@ -1,12 +1,16 @@
 import { requireAdmin } from "@/lib/auth/admin"
 import { sql } from "@/lib/db"
 import { AdminCompaniesTable, type AdminCompany } from "@/components/admin/admin-companies-table"
+import { getServerLocale } from "@/lib/i18n-server"
+import { t } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminCompaniesPage() {
   const admin = await requireAdmin()
   if (!admin) return null
+
+  const locale = await getServerLocale()
 
   const companies = await sql<AdminCompany[]>`
     select
@@ -32,17 +36,15 @@ export default async function AdminCompaniesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Companies</h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          Set industry and company size for each client. These feed AI opportunity generation.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t(locale, "admin.companiesTitle")}</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">{t(locale, "admin.companiesSubtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total companies" value={companies.length} />
-        <StatCard label="Missing industry / size" value={pendingCount} />
+        <StatCard label={t(locale, "admin.stat.total")} value={companies.length} />
+        <StatCard label={t(locale, "admin.stat.missing")} value={pendingCount} />
         <StatCard
-          label="Assessed"
+          label={t(locale, "admin.stat.assessed")}
           value={companies.filter((c) => c.assessment_count > 0).length}
         />
       </div>

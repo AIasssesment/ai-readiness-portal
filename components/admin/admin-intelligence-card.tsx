@@ -1,4 +1,5 @@
 import { Brain } from "lucide-react"
+import { useLanguage } from "@/components/language-provider"
 
 type Profile = Record<string, unknown>
 
@@ -27,12 +28,13 @@ export function AdminIntelligenceCard({
   source: string
   updatedAt: string
 }) {
+  const { t, locale } = useLanguage()
   const facts: Array<{ label: string; value: string }> = []
   const industry = asString(profile.industry)
   const model = asString(profile.business_model)
   const employees = asString(profile.employee_count)
   const hq = asString(profile.headquarters)
-  if (industry) facts.push({ label: "Industry", value: industry })
+  if (industry) facts.push({ label: t("admin.industry"), value: industry })
   if (model) facts.push({ label: "Model", value: model })
   if (employees) facts.push({ label: "Employees", value: employees })
   if (hq) facts.push({ label: "HQ", value: hq })
@@ -48,20 +50,28 @@ export function AdminIntelligenceCard({
   const updated = new Date(updatedAt)
   const updatedLabel = Number.isNaN(updated.getTime())
     ? ""
-    : updated.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+    : updated.toLocaleDateString(locale === "uk" ? "uk-UA" : "en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
 
   return (
     <details className="group rounded-xl border bg-card shadow-sm">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
         <span className="flex min-w-0 items-center gap-2">
           <Brain className="h-4 w-4 shrink-0 text-primary" />
-          <span className="text-sm font-semibold">Stored AI company profile</span>
+          <span className="text-sm font-semibold">{t("admin.intelligence.title")}</span>
           <span className="truncate text-xs text-muted-foreground">
             {source} · {updatedLabel}
           </span>
         </span>
-        <span className="shrink-0 text-xs text-muted-foreground group-open:hidden">Show</span>
-        <span className="hidden shrink-0 text-xs text-muted-foreground group-open:inline">Hide</span>
+        <span className="shrink-0 text-xs text-muted-foreground group-open:hidden">
+          {t("admin.intelligence.show")}
+        </span>
+        <span className="hidden shrink-0 text-xs text-muted-foreground group-open:inline">
+          {t("admin.intelligence.hide")}
+        </span>
       </summary>
 
       <div className="space-y-4 border-t p-4">
@@ -75,14 +85,14 @@ export function AdminIntelligenceCard({
           </div>
         ) : null}
 
-        <Chips title="Departments" items={departments} />
-        <Chips title="Products / services" items={products} />
-        <Chips title="Tech stack" items={tech} />
-        <Chips title="Likely data sources" items={dataSources} />
-        <Chips title="Confirmed pain points" items={painPoints} tone="warn" />
+        <Chips title={t("admin.chips.departments")} items={departments} />
+        <Chips title={t("admin.chips.products")} items={products} />
+        <Chips title={t("admin.chips.tech")} items={tech} />
+        <Chips title={t("admin.chips.dataSources")} items={dataSources} />
+        <Chips title={t("admin.chips.painPoints")} items={painPoints} tone="warn" />
 
         {news.length ? (
-          <Section title="Recent news">
+          <Section title={t("admin.chips.recentNews")}>
             <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
               {news.map((n, i) => (
                 <li key={i}>{n}</li>

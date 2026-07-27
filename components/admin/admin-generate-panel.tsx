@@ -15,6 +15,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useLanguage } from "@/components/language-provider"
+import type { TranslationKey } from "@/lib/i18n"
 
 type StageKey = "loading" | "research" | "profile" | "generating" | "scoring" | "saving"
 type StageStatus = "pending" | "active" | "done"
@@ -38,13 +40,13 @@ type ProfileSummary = {
   sources_count: number
 }
 
-const STAGES: Array<{ key: StageKey; label: string; icon: typeof Globe }> = [
-  { key: "loading", label: "Loading assessment & workforce", icon: CircleDashed },
-  { key: "research", label: "Researching company on the web", icon: Globe },
-  { key: "profile", label: "Building intelligence profile", icon: ScanSearch },
-  { key: "generating", label: "Generating opportunities", icon: Sparkles },
-  { key: "scoring", label: "Scoring & filtering (relevance ≥50)", icon: Target },
-  { key: "saving", label: "Saving to database", icon: Save },
+const STAGE_DEFS: Array<{ key: StageKey; labelKey: TranslationKey; icon: typeof Globe }> = [
+  { key: "loading", labelKey: "admin.generate.stage.loading", icon: CircleDashed },
+  { key: "research", labelKey: "admin.generate.stage.research", icon: Globe },
+  { key: "profile", labelKey: "admin.generate.stage.profile", icon: ScanSearch },
+  { key: "generating", labelKey: "admin.generate.stage.generating", icon: Sparkles },
+  { key: "scoring", labelKey: "admin.generate.stage.scoring", icon: Target },
+  { key: "saving", labelKey: "admin.generate.stage.saving", icon: Save },
 ]
 
 export function AdminGeneratePanel({
@@ -54,6 +56,7 @@ export function AdminGeneratePanel({
   clientId: string
   disabled?: boolean
 }) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [isRunning, setIsRunning] = useState(false)
   const [statuses, setStatuses] = useState<Record<StageKey, StageStatus>>(initialStatuses)
@@ -126,7 +129,7 @@ export function AdminGeneratePanel({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generation failed")
+      setError(err instanceof Error ? err.message : t("admin.generate.failed"))
     } finally {
       if (timerRef.current) clearInterval(timerRef.current)
       setIsRunning(false)
@@ -136,7 +139,7 @@ export function AdminGeneratePanel({
   // Auto-refresh the opportunities list once a run finishes successfully.
   useEffect(() => {
     if (result && !isRunning) {
-      toast.success(`${result.count} opportunities generated`)
+      toast.success(t("admin.generate.doneToast").replace("{count}", String(result.count)))
       router.refresh()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,18 +150,19 @@ export function AdminGeneratePanel({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-xl">
           <Sparkles className="h-5 w-5 text-primary" />
-          AI opportunity generation
+          {t("admin.generate.cardTitle")}
         </CardTitle>
-        <CardDescription>
-          Two-stage pipeline: web research → intelligence profile → scored opportunities. Replaces
-          existing AI opportunities.
-        </CardDescription>
+        <CardDescription>{t("admin.generate.cardDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-3">
           <Button onClick={handleGenerate} disabled={isRunning || disabled} className="h-11 gap-2">
             {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {isRunning ? "Generating…" : result ? "Regenerate" : "Generate opportunities"}
+            {isRunning
+              ? t("admin.generate.generating")
+              : result
+                ? t("admin.generate.regenerate")
+                : t("admin.generate.action")}
           </Button>
           {(isRunning || result) && (
             <span className="text-sm tabular-nums text-muted-foreground">{elapsed}s</span>
@@ -166,14 +170,12 @@ export function AdminGeneratePanel({
         </div>
 
         {disabled && !isRunning ? (
-          <p className="text-xs text-muted-foreground">
-            No assessment yet — AI generation is unavailable until the company completes one.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("admin.generate.noAssessment")}</p>
         ) : null}
 
         {(isRunning || result || error) && (
           <ol className="space-y-2 rounded-lg border bg-muted/30 p-3">
-            {STAGES.map((stage) => {
+            {STAGE_DEFS.map((stage) => {
               const status = statuses[stage.key]
               const Icon = stage.icon
               return (
@@ -197,7 +199,7 @@ export function AdminGeneratePanel({
                             : "font-medium text-foreground"
                       }
                     >
-                      {stage.label}
+                      {t(stage.labelKey)}
                     </span>
                     {messages[stage.key] ? (
                       <span className="block text-xs text-muted-foreground">{messages[stage.key]}</span>
@@ -250,8 +252,9 @@ function SuccessBanner({ count, onReview }: { count: number; onReview: () => voi
 }
 
 function ProfilePreview({ profile }: { profile: ProfileSummary }) {
+  const { t } = useLanguage()
   const facts: Array<{ label: string; value: string }> = []
-  if (profile.industry) facts.push({ label: "Industry", value: profile.industry })
+  if (profile.industry) facts.push({ label: t("admin.industry"), value: profile.industry })
   if (profile.business_model) facts.push({ label: "Model", value: profile.business_model })
   if (profile.employee_count != null && profile.employee_count !== "")
     facts.push({ label: "Employees", value: String(profile.employee_count) })
@@ -261,9 +264,9 @@ function ProfilePreview({ profile }: { profile: ProfileSummary }) {
     <div className="space-y-3 rounded-lg border bg-card p-3">
       <p className="flex items-center gap-2 text-sm font-semibold">
         <ScanSearch className="h-4 w-4 text-primary" />
-        What the AI found
+        {t("admin.intelligence.title")}
         <span className="text-xs font-normal text-muted-foreground">
-          · {profile.sources_count} sources
+          · {profile.sources_count}
         </span>
       </p>
 
@@ -277,13 +280,13 @@ function ProfilePreview({ profile }: { profile: ProfileSummary }) {
         </div>
       ) : null}
 
-      <ChipGroup title="Departments" items={profile.departments} />
-      <ChipGroup title="Products / services" items={profile.core_products_services} />
-      <ChipGroup title="Tech stack" items={profile.tech_stack} />
-      <ChipGroup title="Pain points" items={profile.confirmed_pain_points} tone="warn" />
+      <ChipGroup title={t("admin.chips.departments")} items={profile.departments} />
+      <ChipGroup title={t("admin.chips.products")} items={profile.core_products_services} />
+      <ChipGroup title={t("admin.chips.tech")} items={profile.tech_stack} />
+      <ChipGroup title={t("admin.chips.painPoints")} items={profile.confirmed_pain_points} tone="warn" />
       {profile.recent_news.length ? (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Recent news</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("admin.chips.recentNews")}</p>
           <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
             {profile.recent_news.map((n, i) => (
               <li key={i}>{n}</li>

@@ -8,6 +8,8 @@ import { AdminCompanyProfileControls } from "@/components/admin/admin-company-pr
 import { AdminGeneratePanel } from "@/components/admin/admin-generate-panel"
 import { AdminIntelligenceCard } from "@/components/admin/admin-intelligence-card"
 import { AdminOpportunityList, type AdminOpportunity } from "@/components/admin/admin-opportunity-list"
+import { getServerLocale } from "@/lib/i18n-server"
+import { t } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -32,6 +34,7 @@ export default async function AdminCompanyPage({
   const admin = await requireAdmin()
   if (!admin) return null
 
+  const locale = await getServerLocale()
   const { id } = await params
 
   const rows = await sql<ClientRow[]>`
@@ -81,12 +84,12 @@ export default async function AdminCompanyPage({
         href="/admin"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" /> Companies
+        <ArrowLeft className="h-4 w-4" /> {t(locale, "admin.backToCompanies")}
       </Link>
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {client.company_name || "Unnamed"}
+          {client.company_name || t(locale, "admin.unnamed")}
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           {client.website ? (
@@ -109,7 +112,7 @@ export default async function AdminCompanyPage({
 
       <section className="rounded-xl border bg-card p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Profile (feeds AI generation)
+          {t(locale, "admin.profileSection")}
         </h2>
         <AdminCompanyProfileControls
           clientId={client.id}
@@ -120,8 +123,7 @@ export default async function AdminCompanyPage({
 
       {!hasAssessment ? (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
-          This company has no assessment yet. AI generation needs one; you can still add opportunities
-          manually.
+          {t(locale, "admin.noAssessmentWarning")}
         </div>
       ) : null}
 
@@ -140,10 +142,10 @@ export default async function AdminCompanyPage({
 
       <section id="opportunities" className="scroll-mt-6 space-y-3">
         <div>
-          <h2 className="text-lg font-semibold">Opportunities ({opportunities.length})</h2>
-          <p className="text-sm text-muted-foreground">
-            Review drafts in the exact client view, edit them, then publish when ready.
-          </p>
+          <h2 className="text-lg font-semibold">
+            {t(locale, "admin.opportunitiesTitle")} ({opportunities.length})
+          </h2>
+          <p className="text-sm text-muted-foreground">{t(locale, "admin.opportunitiesSubtitle")}</p>
         </div>
         <AdminOpportunityList clientId={client.id} opportunities={opportunities} />
       </section>

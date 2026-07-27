@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EMPLOYEE_RANGES, INDUSTRIES } from "@/lib/assessment-data"
 import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
+import { useLanguage } from "@/components/language-provider"
 
 const UNSET = "__unset__"
 
@@ -18,6 +19,7 @@ export function AdminCompanyProfileControls({
   industry: string | null
   companySize: string | null
 }) {
+  const { t } = useLanguage()
   const [current, setCurrent] = useState({ industry, companySize })
   const [saving, setSaving] = useState(false)
 
@@ -37,13 +39,13 @@ export function AdminCompanyProfileControls({
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         setCurrent(previous)
-        toast.error(parseApiErrorMessage(data) ?? "Failed to save")
+        toast.error(parseApiErrorMessage(data) ?? t("admin.saveFailed"))
         return
       }
-      toast.success("Saved")
+      toast.success(t("admin.saved"))
     } catch {
       setCurrent(previous)
-      toast.error("Failed to save")
+      toast.error(t("admin.saveFailed"))
     } finally {
       setSaving(false)
     }
@@ -52,35 +54,35 @@ export function AdminCompanyProfileControls({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Industry</label>
+        <label className="text-xs font-medium text-muted-foreground">{t("admin.industry")}</label>
         <Select
           value={current.industry ?? UNSET}
           onValueChange={(value) => save({ industry: value === UNSET ? null : value })}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Not set" />
+            <SelectValue placeholder={t("admin.notSet")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={UNSET}>Not set</SelectItem>
-            {INDUSTRIES.map((industry) => (
-              <SelectItem key={industry} value={industry}>
-                {industry}
+            <SelectItem value={UNSET}>{t("admin.notSet")}</SelectItem>
+            {INDUSTRIES.map((industryOption) => (
+              <SelectItem key={industryOption} value={industryOption}>
+                {industryOption}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Company size</label>
+        <label className="text-xs font-medium text-muted-foreground">{t("admin.companySize")}</label>
         <Select
           value={current.companySize ?? UNSET}
           onValueChange={(value) => save({ company_size: value === UNSET ? null : value })}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Not set" />
+            <SelectValue placeholder={t("admin.notSet")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={UNSET}>Not set</SelectItem>
+            <SelectItem value={UNSET}>{t("admin.notSet")}</SelectItem>
             {EMPLOYEE_RANGES.map((size) => (
               <SelectItem key={size} value={size}>
                 {size}
@@ -91,7 +93,7 @@ export function AdminCompanyProfileControls({
       </div>
       {saving ? (
         <p className="col-span-full flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+          <Loader2 className="h-3 w-3 animate-spin" /> {t("admin.saving")}
         </p>
       ) : null}
     </div>

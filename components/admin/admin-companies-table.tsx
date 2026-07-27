@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EMPLOYEE_RANGES, INDUSTRIES } from "@/lib/assessment-data"
 import { parseApiErrorMessage } from "@/lib/http/parse-api-error-message"
+import { useLanguage } from "@/components/language-provider"
 
 export type AdminCompany = {
   id: string
@@ -28,6 +29,7 @@ export type AdminCompany = {
 const UNSET = "__unset__"
 
 export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }) {
+  const { t } = useLanguage()
   const [rows, setRows] = useState<AdminCompany[]>(companies)
   const [query, setQuery] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -61,13 +63,13 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         setRows((prev) => prev.map((r) => (r.id === id ? previous : r)))
-        toast.error(parseApiErrorMessage(data) ?? "Failed to save")
+        toast.error(parseApiErrorMessage(data) ?? t("admin.saveFailed"))
         return
       }
-      toast.success("Saved")
+      toast.success(t("admin.saved"))
     } catch {
       setRows((prev) => prev.map((r) => (r.id === id ? previous : r)))
-      toast.error("Failed to save")
+      toast.error(t("admin.saveFailed"))
     } finally {
       setSavingId(null)
     }
@@ -80,14 +82,14 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search company, email, industry…"
+          placeholder={t("admin.searchPlaceholder")}
           className="pl-9"
         />
       </div>
 
       {filtered.length === 0 ? (
         <p className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
-          No companies found.
+          {t("admin.noCompaniesFound")}
         </p>
       ) : (
         <div className="space-y-3">
@@ -102,14 +104,14 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold">{row.company_name || "Unnamed"}</h3>
+                      <h3 className="font-semibold">{row.company_name || t("admin.unnamed")}</h3>
                       {needsAttention ? (
                         <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                          Needs industry / size
+                          {t("admin.needsIndustrySize")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                          <Check className="h-3 w-3" /> Set
+                          <Check className="h-3 w-3" /> {t("admin.set")}
                         </span>
                       )}
                     </div>
@@ -128,21 +130,21 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
                       <p className="line-clamp-2 text-sm text-muted-foreground">{row.description}</p>
                     ) : null}
                     <p className="text-xs text-muted-foreground">
-                      {row.account_email || row.contact_email} · {row.assessment_count} assessments ·{" "}
-                      {row.opportunity_count} opportunities
+                      {row.account_email || row.contact_email} · {row.assessment_count}{" "}
+                      {t("admin.assessmentsCount")} · {row.opportunity_count} {t("admin.opportunitiesCount")}
                     </p>
                     <Link
                       href={`/admin/companies/${row.id}`}
                       className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                     >
-                      Manage opportunities
+                      {t("admin.manageOpportunities")}
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
 
                   <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:w-[420px]">
                     <div className="flex-1 space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Industry</label>
+                      <label className="text-xs font-medium text-muted-foreground">{t("admin.industry")}</label>
                       <Select
                         value={row.industry ?? UNSET}
                         onValueChange={(value) =>
@@ -150,10 +152,10 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
                         }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Not set" />
+                          <SelectValue placeholder={t("admin.notSet")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={UNSET}>Not set</SelectItem>
+                          <SelectItem value={UNSET}>{t("admin.notSet")}</SelectItem>
                           {INDUSTRIES.map((industry) => (
                             <SelectItem key={industry} value={industry}>
                               {industry}
@@ -164,7 +166,7 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
                     </div>
 
                     <div className="flex-1 space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Company size</label>
+                      <label className="text-xs font-medium text-muted-foreground">{t("admin.companySize")}</label>
                       <Select
                         value={row.company_size ?? UNSET}
                         onValueChange={(value) =>
@@ -172,10 +174,10 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
                         }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Not set" />
+                          <SelectValue placeholder={t("admin.notSet")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={UNSET}>Not set</SelectItem>
+                          <SelectItem value={UNSET}>{t("admin.notSet")}</SelectItem>
                           {EMPLOYEE_RANGES.map((size) => (
                             <SelectItem key={size} value={size}>
                               {size}
@@ -189,7 +191,7 @@ export function AdminCompaniesTable({ companies }: { companies: AdminCompany[] }
 
                 {isSaving ? (
                   <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+                    <Loader2 className="h-3 w-3 animate-spin" /> {t("admin.saving")}
                   </div>
                 ) : null}
               </div>
