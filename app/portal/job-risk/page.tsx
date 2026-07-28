@@ -1,4 +1,3 @@
-import { sql } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth/session"
 import { redirect } from "next/navigation"
 import Link from "next/link"
@@ -11,6 +10,7 @@ import { JobRiskLinkedinGate } from "@/components/portal/job-risk-linkedin-gate"
 import { JobRiskUnlockGate } from "@/components/portal/job-risk-unlock-gate"
 import { JobRiskEnrichmentPanel } from "@/components/portal/job-risk-enrichment-panel"
 import { getJobRiskAccessByUserId } from "@/lib/job-risk/access"
+import { fetchLatestJobRiskReport, nestReportToPortalShape } from "@/lib/api/job-risk"
 import { ShieldCheck, Building2, Clock, ArrowRight } from "lucide-react"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
@@ -111,15 +111,10 @@ export default async function JobRiskPage({
   }
 
   const clientId = access.clientId
-
-  const reports = await sql<Array<{ id: string; overall_risk_score: number; executive_summary: string | null; generated_at: string }>>`
-    select id, overall_risk_score, executive_summary, generated_at
-    from job_risk_reports
-    where client_id = ${clientId}
-    order by generated_at desc
-    limit 1
-  `
-  const latestReport = reports[0]
+  const latestPayload = await fetchLatestJobRiskReport(clientId)
+  const latestReport = latestPayload.report
+    ? nestReportToPortalShape(latestPayload.report)
+    : null
 
   if (!latestReport) {
     return (
@@ -141,26 +136,7 @@ export default async function JobRiskPage({
     )
   }
 
-  const roles = await sql<RiskRole[]>`
-    select
-      id,
-      role_name,
-      department,
-      risk_score,
-      employee_count,
-      at_risk_headcount,
-      benchmark_risk_score,
-      risk_data_source,
-      timeline_months_min,
-      timeline_months_max,
-      reasoning,
-      tasks_at_risk,
-      tasks_safe,
-      reskilling_suggestions
-    from job_risks
-    where report_id = ${latestReport.id}
-    order by risk_score desc
-  `
+  const roles: RiskRole[] = latestReport.roles
 
   const departments = Array.from(
     new Set(roles.map((role) => role.department).filter((department): department is string => Boolean(department))),

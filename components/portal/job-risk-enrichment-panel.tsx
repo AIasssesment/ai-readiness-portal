@@ -1,8 +1,8 @@
-import { sql } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Briefcase, AlertCircle } from "lucide-react"
 import { t, type Locale } from "@/lib/i18n"
+import { fetchCompanyEnrichment } from "@/lib/api/job-risk"
 
 type EnrichmentSnapshot = {
   status: string
@@ -22,27 +22,9 @@ export async function JobRiskEnrichmentPanel({
   clientId: string
   locale: Locale
 }) {
-  const rows = await sql<
-    Array<{
-      status: string
-      linkedin_url: string
-      error: string | null
-      fetched_at: Date | string | null
-      normalized: {
-        company?: { name?: string | null; about?: string | null }
-        detected_jobs?: unknown[]
-        implied_roles?: unknown[]
-      } | null
-    }>
-  >`
-    select status, linkedin_url, error, fetched_at, normalized
-    from company_enrichment
-    where client_id = ${clientId}::uuid
-    limit 1
-  `
+  const { enrichment } = await fetchCompanyEnrichment(clientId)
 
-  const row = rows[0]
-  if (!row) {
+  if (!enrichment) {
     return (
       <Card className="border-border/40 bg-card/80">
         <CardHeader className="pb-2">
@@ -56,15 +38,16 @@ export async function JobRiskEnrichmentPanel({
     )
   }
 
+  const normalized = enrichment.normalized
   const snapshot: EnrichmentSnapshot = {
-    status: row.status,
-    linkedin_url: row.linkedin_url,
-    error: row.error,
-    fetched_at: row.fetched_at ? String(row.fetched_at) : null,
-    company_name: row.normalized?.company?.name ?? null,
-    about: row.normalized?.company?.about ?? null,
-    jobs_count: Array.isArray(row.normalized?.detected_jobs) ? row.normalized!.detected_jobs!.length : 0,
-    roles_count: Array.isArray(row.normalized?.implied_roles) ? row.normalized!.implied_roles!.length : 0,
+    status: enrichment.status,
+    linkedin_url: enrichment.linkedinUrl,
+    error: enrichment.error,
+    fetched_at: enrichment.fetchedAt,
+    company_name: normalized?.company?.name ?? null,
+    about: normalized?.company?.about ?? null,
+    jobs_count: Array.isArray(normalized?.detected_jobs) ? normalized!.detected_jobs!.length : 0,
+    roles_count: Array.isArray(normalized?.implied_roles) ? normalized!.implied_roles!.length : 0,
   }
 
   const badgeClass =

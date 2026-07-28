@@ -25,11 +25,23 @@ export function JobRiskUnlockGate() {
     setError(null)
     try {
       const response = await fetch("/api/job-risk/checkout", { method: "POST" })
+      const data = (await response.json().catch(() => null)) as {
+        pageUrl?: string
+        ok?: boolean
+        error?: unknown
+      } | null
+
       if (!response.ok) {
-        const data = await response.json().catch(() => null)
         setError(parseApiErrorMessage(data) ?? t("jobRisk.unlock.error"))
         return
       }
+
+      if (data?.pageUrl) {
+        window.location.href = data.pageUrl
+        return
+      }
+
+      // Already unlocked / stub-like success without redirect.
       router.refresh()
     } catch {
       setError(t("jobRisk.unlock.error"))

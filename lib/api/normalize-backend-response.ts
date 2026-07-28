@@ -1,4 +1,5 @@
 import type {
+  AsyncJobResponse,
   CreateMonobankInvoiceResponse,
   ReportReadinessResponse,
   ReportRequestResponse,
@@ -106,4 +107,24 @@ export function normalizeReportRequestResponse(payload: unknown): ReportRequestR
     manualDueAt: readString(record, "manualDueAt", "manual_due_at") ?? null,
     completedAt: readString(record, "completedAt", "completed_at") ?? null,
   }
+}
+
+export function normalizeAsyncJobResponse(payload: unknown): AsyncJobResponse {
+  const record = asRecord(payload)
+  if (!record) {
+    throw new Error("Invalid async job response")
+  }
+
+  const jobId = readString(record, "jobId", "job_id") ?? ""
+  const status = readString(record, "status") ?? "queued"
+
+  const errorRaw = asRecord(record.error)
+  const error = errorRaw
+    ? {
+        code: readString(errorRaw, "code"),
+        message: readString(errorRaw, "message"),
+      }
+    : undefined
+
+  return { jobId, status, error }
 }

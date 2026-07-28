@@ -51,3 +51,15 @@ export type ReportRequestResponse = {
   manualDueAt?: string | null
   completedAt?: string | null
 }
+
+/** Nest async job enqueue / status envelope (Phase 1+). */
+export type AsyncJobStatus = "queued" | "running" | "completed" | "failed" | string
+
+export type AsyncJobResponse = {
+  jobId: string
+  status: AsyncJobStatus
+  error?: {
+    code?: string
+    message?: string
+  }
+}
