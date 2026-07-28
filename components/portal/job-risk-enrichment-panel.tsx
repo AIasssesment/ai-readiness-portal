@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Briefcase, AlertCircle } from "lucide-react"
 import { t, type Locale } from "@/lib/i18n"
-import { fetchCompanyEnrichment } from "@/lib/api/job-risk"
+import { loadCompanyEnrichment } from "@/lib/api/job-risk"
 
 type EnrichmentSnapshot = {
   status: string
@@ -22,7 +22,7 @@ export async function JobRiskEnrichmentPanel({
   clientId: string
   locale: Locale
 }) {
-  const { enrichment } = await fetchCompanyEnrichment(clientId)
+  const { enrichment } = await loadCompanyEnrichment(clientId)
 
   if (!enrichment) {
     return (

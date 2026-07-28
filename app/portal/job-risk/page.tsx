@@ -10,7 +10,7 @@ import { JobRiskLinkedinGate } from "@/components/portal/job-risk-linkedin-gate"
 import { JobRiskUnlockGate } from "@/components/portal/job-risk-unlock-gate"
 import { JobRiskEnrichmentPanel } from "@/components/portal/job-risk-enrichment-panel"
 import { getJobRiskAccessByUserId } from "@/lib/job-risk/access"
-import { fetchLatestJobRiskReport, nestReportToPortalShape } from "@/lib/api/job-risk"
+import { loadPortalJobRiskReport } from "@/lib/api/job-risk"
 import { ShieldCheck, Building2, Clock, ArrowRight } from "lucide-react"
 import { t } from "@/lib/i18n"
 import { getServerLocale } from "@/lib/i18n-server"
@@ -111,10 +111,7 @@ export default async function JobRiskPage({
   }
 
   const clientId = access.clientId
-  const latestPayload = await fetchLatestJobRiskReport(clientId)
-  const latestReport = latestPayload.report
-    ? nestReportToPortalShape(latestPayload.report)
-    : null
+  const latestReport = await loadPortalJobRiskReport(clientId)
 
   if (!latestReport) {
     return (

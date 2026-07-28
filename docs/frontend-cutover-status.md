@@ -51,3 +51,20 @@ Identity SQL kept only for `resolveClientIdForUser` (map `app_users` → `client
 
 Browser report unlock still uses `lib/api/payments.ts` → Nest without internal token.
 Job Risk checkout is server BFF → Nest Monobank job-risk invoice (`pageUrl` redirect).
+
+## Production note (2026-07-28)
+
+Job Risk **reads** (access / latest report / enrichment) try Nest first, then fall
+back to Neon SQL if Nest is unreachable or BFF env is missing. This avoids
+`/portal/job-risk` 500s when VPS Nest is behind Phase 1.
+
+Vercel still needs for full BFF (mutations / generate / checkout):
+
+```bash
+API_URL=https://<prod-nest-host>
+INTERNAL_API_TOKEN=<same as Nest>
+APP_URL=https://www.signal2flow.com
+```
+
+Until Nest on VPS is at `436d6e3+`, generate/linkedin/workforce/checkout proxies
+may fail; page render should still work via SQL fallback.
