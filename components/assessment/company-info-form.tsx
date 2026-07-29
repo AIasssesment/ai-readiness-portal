@@ -6,7 +6,6 @@ import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { cn, normalizeCompanyWebsiteInput } from '@/lib/utils'
 import { parseApiErrorMessage } from '@/lib/http/parse-api-error-message'
 import { useAssessmentStore } from '@/lib/assessment-store'
@@ -34,7 +33,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     lastName: '',
     companyName: '',
     website: '',
-    description: '',
     email: '',
   })
   const [error, setError] = useState<string | null>(null)
@@ -44,14 +42,12 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
     e.preventDefault()
 
     const companyWebsite = normalizeCompanyWebsiteInput(formData.website || formData.companyName)
-    const description = formData.description?.trim() || ''
 
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
       !formData.email.trim() ||
-      !companyWebsite ||
-      !description
+      !companyWebsite
     ) {
       setError(t('companyForm.errorRequired'))
       return
@@ -89,7 +85,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
           lastName: formData.lastName.trim(),
           companyName: displayName,
           website: companyWebsite,
-          description,
           locale,
         }),
       })
@@ -115,7 +110,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
         ...formData,
         companyName: displayName,
         website: companyWebsite,
-        description,
       })
     } catch {
       setError(t('companyForm.provisionFailed'))
@@ -209,22 +203,6 @@ export function CompanyInfoForm({ embedded = false }: { embedded?: boolean }) {
             onChange={(e) => setFormData({ ...formData, website: e.target.value })}
             className="h-12 border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
-        </div>
-
-        <div>
-          <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            {t('companyForm.description')}
-          </label>
-          <Textarea
-            id="description"
-            rows={3}
-            maxLength={500}
-            placeholder={t('companyForm.phDescription')}
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="border-border bg-secondary text-foreground placeholder:text-muted-foreground focus:border-primary"
-          />
-          <p className="mt-1 text-xs text-muted-foreground">{t('companyForm.descriptionHint')}</p>
         </div>
 
         {error && (

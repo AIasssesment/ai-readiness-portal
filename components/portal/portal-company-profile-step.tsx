@@ -5,7 +5,6 @@ import { createClient } from "@/lib/db-client/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { ArrowRight } from "lucide-react"
@@ -24,7 +23,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
   const [form, setForm] = useState({
     companyName: initial.companyName || "",
     website: initial.website || "",
-    description: initial.description || "",
   })
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -33,10 +31,9 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
     const website = form.website.trim()
       ? normalizeCompanyWebsiteInput(form.website.trim())
       : ""
-    const description = form.description.trim()
     const companyName = form.companyName.trim() || initial.companyName
 
-    if (!description) {
+    if (!companyName.trim()) {
       setError(t("portal.assessment.profile.errorRequired"))
       return
     }
@@ -48,7 +45,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
       ...initial,
       companyName,
       website,
-      description,
     }
 
     const { data: { user } } = await db.auth.getUser()
@@ -58,7 +54,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
         .update({
           company_name: companyName,
           website: website || null,
-          description,
         })
         .eq("user_id", user.id)
 
@@ -101,19 +96,6 @@ export function PortalCompanyProfileStep({ initial, onContinue }: PortalCompanyP
             onChange={(e) => setForm({ ...form, website: e.target.value })}
             placeholder={t("settings.website.placeholder")}
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="portal-description">{t("settings.whatYouDo")} *</Label>
-          <Textarea
-            id="portal-description"
-            rows={3}
-            maxLength={500}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder={t("settings.whatYouDo.placeholder")}
-          />
-          <p className="text-xs text-muted-foreground">{t("settings.whatYouDo.hint")}</p>
         </div>
 
         {error ? (

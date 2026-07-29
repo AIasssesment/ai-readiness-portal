@@ -38,7 +38,6 @@ import {
   Settings, 
   LogOut,
   User,
-  Users,
   ChevronRight,
   Brain,
   ShieldCheck,
@@ -122,7 +121,6 @@ export function PortalNav({
 
   const careerNav = [
     { href: "/portal/job-risk", label: t("portal.nav.jobRisk"), icon: ShieldAlert },
-    { href: "/portal/workforce", label: t("portal.nav.workforce"), icon: Users },
   ]
 
   const adminNav = isAdmin

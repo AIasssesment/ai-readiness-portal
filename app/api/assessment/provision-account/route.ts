@@ -40,7 +40,6 @@ export async function POST(request: Request) {
       lastName?: string
       companyName?: string
       website?: string
-      description?: string
       locale?: string
     }
 
@@ -48,10 +47,9 @@ export async function POST(request: Request) {
     const firstName = String(body.firstName ?? "").trim()
     const lastName = String(body.lastName ?? "").trim()
     const companyWebsite = String(body.website ?? body.companyName ?? "").trim()
-    const description = String(body.description ?? "").trim()
     const locale: Locale = body.locale === "uk" ? "uk" : "en"
 
-    if (!email || !firstName || !lastName || !companyWebsite || !description) {
+    if (!email || !firstName || !lastName || !companyWebsite) {
       return apiErrors.badRequest("Missing required fields")
     }
 
@@ -98,11 +96,11 @@ export async function POST(request: Request) {
       await tx`
         insert into clients (
           id, user_id, company_name, contact_name, contact_email,
-          website, description
+          website
         )
         values (
           gen_random_uuid(), ${userId}, ${companyName}, ${contactName}, ${email},
-          ${companyWebsite}, ${description}
+          ${companyWebsite}
         )
       `
 

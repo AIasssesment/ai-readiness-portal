@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Building2, User, Mail, Save, CheckCircle, Globe2, Linkedin } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
@@ -19,7 +18,6 @@ interface Client {
   contact_name: string | null
   contact_email: string
   website: string | null
-  description: string | null
   linkedin: string | null
 }
 
@@ -34,7 +32,6 @@ export default function SettingsPage() {
     contact_name: "",
     contact_email: "",
     website: "",
-    description: "",
     linkedin: "",
   })
 
@@ -59,7 +56,6 @@ export default function SettingsPage() {
           contact_name: row.contact_name || "",
           contact_email: row.contact_email || "",
           website: row.website || "",
-          description: row.description || "",
           linkedin: row.linkedin || "",
         })
       }
@@ -87,7 +83,6 @@ export default function SettingsPage() {
         contact_name: formData.contact_name || null,
         contact_email: formData.contact_email,
         website,
-        description: formData.description.trim() || null,
         linkedin,
       })
       .eq("id", client.id)
@@ -179,19 +174,6 @@ export default function SettingsPage() {
               placeholder={t("settings.linkedin.placeholder")}
             />
             <p className="text-xs text-muted-foreground">{t("settings.linkedin.hint")}</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="whatYouDo">{t("settings.whatYouDo")}</Label>
-            <Textarea
-              id="whatYouDo"
-              rows={3}
-              maxLength={500}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder={t("settings.whatYouDo.placeholder")}
-            />
-            <p className="text-xs text-muted-foreground">{t("settings.whatYouDo.hint")}</p>
           </div>
 
           <div className="space-y-2">
